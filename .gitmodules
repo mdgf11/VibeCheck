@@ -1,0 +1,6 @@
+[submodule "VibeCheck_backend"]
+	path = VibeCheck_backend
+	url = git@github.com:mdgf11/VibeCheck_backend.git
+[submodule "VibeCheck_frontend"]
+	path = VibeCheck_frontend
+	url = git@github.com:mdgf11/VibeCheck_frontend.git
