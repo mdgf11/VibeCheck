@@ -1,0 +1,1 @@
+mvn clean -f ./backend/pom.xml
