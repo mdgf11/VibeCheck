@@ -16,6 +16,12 @@ import lombok.EqualsAndHashCode;
 @PrimaryKeyJoinColumn(name = "playlistId")
 public class Playlist extends RaterEntity{
 
+    public Playlist(String name, List<Song> songs) {
+        super();
+        this.name = name;
+        this.songs = songs;
+    }
+
     private String name;
 
     @ManyToMany
@@ -24,5 +30,4 @@ public class Playlist extends RaterEntity{
                 inverseJoinColumns = @JoinColumn(name="song_id"))
     private List<Song> songs;
 
-    
 }

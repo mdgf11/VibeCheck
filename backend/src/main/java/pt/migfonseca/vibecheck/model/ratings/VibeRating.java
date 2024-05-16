@@ -7,15 +7,15 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.Data;
 import pt.migfonseca.vibecheck.model.RaterEntity;
-import pt.migfonseca.vibecheck.model.Tag;
+import pt.migfonseca.vibecheck.model.Vibe;
 
 @Entity
 @Data
-@IdClass(TagRatingKey.class)
-public class TagRating {
+@IdClass(VibeRatingKey.class)
+public class VibeRating {
 
     @Id
-    private long tagId;
+    private long vibeId;
     @Id
     private long raterEntityId;
 
@@ -27,11 +27,11 @@ public class TagRating {
     private RaterEntity raterEntity;
 
     @ManyToOne
-    @JoinColumn(name="tagId",
-                referencedColumnName="tagId",
+    @JoinColumn(name="vibeId",
+                referencedColumnName="vibeId",
                 updatable=false,
                 insertable=false)
-    private Tag tag;
+    private Vibe vibe;
 
     private Long rating;
 }

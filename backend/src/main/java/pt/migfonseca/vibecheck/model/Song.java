@@ -14,7 +14,15 @@ import lombok.EqualsAndHashCode;
 @PrimaryKeyJoinColumn(name = "songId")
 public class Song extends RaterEntity{    
 
+    public Song(String name, List<String> artists) {
+        super();
+        this.name = name;
+        this.artists = artists;
+    }
+
     private String name;
+
+    private List<String> artists;
 
     @ManyToMany(mappedBy = "songs")
     private List<Playlist> playlists;

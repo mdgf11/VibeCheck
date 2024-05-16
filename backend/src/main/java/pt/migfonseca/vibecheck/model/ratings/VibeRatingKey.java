@@ -5,7 +5,7 @@ import java.io.Serializable;
 import lombok.Data;
 
 @Data
-public class TagRatingKey implements Serializable {
-    Long tagId;
+public class VibeRatingKey implements Serializable {
+    Long vibeId;
     Long raterEntityId;
 }
