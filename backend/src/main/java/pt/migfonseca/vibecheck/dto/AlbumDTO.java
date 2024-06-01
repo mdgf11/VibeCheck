@@ -8,9 +8,11 @@ import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class SongDTO {
+public class AlbumDTO {
     private String name;
     private List<String> artists;
-    private List<String> albums;
+    private List<String> features;
+    private List<String> songs;
     private LocalDate date;
-}   
+
+}

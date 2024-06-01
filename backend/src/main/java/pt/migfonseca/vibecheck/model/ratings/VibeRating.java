@@ -6,12 +6,14 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import pt.migfonseca.vibecheck.model.RaterEntity;
 import pt.migfonseca.vibecheck.model.Vibe;
 
 @Entity
 @Data
 @IdClass(VibeRatingKey.class)
+@NoArgsConstructor
 public class VibeRating {
 
     @Id

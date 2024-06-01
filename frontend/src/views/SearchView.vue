@@ -1,6 +1,6 @@
 <template>
     <div class="search-view">
-        <HeaderView />
+        <HeaderComponent />
         <div class="text-container">
             <p class="slogan">
                 Make Your Own Sound with
@@ -19,11 +19,11 @@
 
 <script lang="ts">
 import { defineComponent, ref } from "vue";
-import HeaderView from "./HeaderView.vue"
+import HeaderComponent from "@/components/HeaderComponent.vue"
 
 export default defineComponent({
     name: 'SearchView',
-    components: { HeaderView },
+    components: { HeaderComponent },
     setup() {
         const info = ref({message: ""});
         const defaultSearch = ref("Search for anything!")

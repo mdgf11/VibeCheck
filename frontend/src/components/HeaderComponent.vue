@@ -13,7 +13,7 @@
     import ToggleButton from "./LoginButton.vue"
 
     export default defineComponent({
-        name: 'HeaderView',
+        name: 'HeaderComponent',
         components: { ToggleButton  },
         data() {
             

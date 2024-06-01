@@ -6,13 +6,20 @@ import jakarta.persistence.IdClass;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import pt.migfonseca.vibecheck.model.Genre;
 import pt.migfonseca.vibecheck.model.RaterEntity;
 
 @Entity
 @Data
 @IdClass(GenreRatingKey.class)
+@NoArgsConstructor
 public class GenreRating {
+
+    public GenreRating(long rating) {
+        this.rating = rating;
+    }
+
     @Id
     private long genreId;
     @Id
@@ -32,5 +39,5 @@ public class GenreRating {
                 insertable=false)
     private Genre genre;
 
-    private Long rating;
+    private long rating;
 }

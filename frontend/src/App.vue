@@ -1,17 +1,16 @@
 <template>
   <div class="app">
-    <SearchView />
   </div>
+  <router-view/>
 </template>
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import SearchView from "./components/SearchView.vue"
 
 
 export default defineComponent({
   name: 'App',
-  components: { SearchView },
+  components: {  },
   data() {
     return {}
   },

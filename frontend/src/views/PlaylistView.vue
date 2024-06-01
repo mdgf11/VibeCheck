@@ -8,12 +8,10 @@
       <button @click="handleClick('artist')">Order by artist</button>
     </div>
   </header>
-  <SongList :songs="songs" :order="order"/>
 </template>
 
 <script lang="ts">
   import { computed, defineComponent, ref } from 'vue'
-  import SongList from './SongList.vue'
   import PlaylistService from '@/services/PlaylistService'
   import Song from '@/types/Song'
   import OrderTerm from '@/types/OrderTerm'
@@ -21,7 +19,7 @@
 
   export default defineComponent({
     name: 'PlaylistView',
-    components: { SongList },
+    components: {},
     data() {
       const songs = [
       {id: '1',

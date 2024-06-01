@@ -1,6 +1,6 @@
 <template>
     <div class="login-button">
-        <div class="actual-button" > 
+        <div class="actual-button" @click="getProfile()" > 
           <h3 class="button-text">{{ text }}</h3>
           <span class="logos">
             <img class="login-logo" :src="loginLogo" />
@@ -15,11 +15,14 @@
 import { defineComponent } from "vue";
 import spotifyLogo from "@/assets/img/spotify-logo.png"
 import loginLogo from "@/assets/img/login-logo.png"
+import { getProfile } from "@/services/SpotifyAPIController"
 
 export default defineComponent({
     data() {
         var text = "Log In"
-        return { text, spotifyLogo, loginLogo }
+        return { text, spotifyLogo, loginLogo, getProfile}
+    },
+    methods: {
     }
     
 })
@@ -43,7 +46,7 @@ export default defineComponent({
     position: relative;
     
     /** Size **/
-    width: 130px;
+    width: 125px;
     height: 40px;
     border-radius: 999px;
   }
@@ -52,7 +55,7 @@ export default defineComponent({
     /** Position **/
     position: relative;
     right: 4px;
-    bottom: 13px;
+    bottom: 8px;
     /** Size **/
     width: 25px;
 
@@ -61,9 +64,9 @@ export default defineComponent({
   }
   .actual-button .icon-seperator {
     position: relative;
-    font-size: 30px;
+    font-size: 25px;
     right:13px;
-    bottom:8px;
+    bottom:11px;
   }
   .actual-button .spotify-logo {
     /** Position **/
@@ -71,7 +74,7 @@ export default defineComponent({
     right: 15px;
     /** Size **/
     width: 17px;
-    bottom:2px;
+    bottom:10px;
 
     /** Other **/
     
