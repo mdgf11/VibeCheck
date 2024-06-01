@@ -49,10 +49,13 @@ public class Artist extends RaterEntity {
     
     private boolean discovered = false;
 
-    public Artist(String name, String spotifyId) {
+    private int popularity;
+
+    public Artist(String name, String spotifyId, int popularity) {
         super();
         this.name = name;
         this.spotifyId = spotifyId;
+        this.popularity = popularity;
         this.albums = new LinkedList<>();
         this.features = new LinkedList<>();
         this.songs = new LinkedList<>();

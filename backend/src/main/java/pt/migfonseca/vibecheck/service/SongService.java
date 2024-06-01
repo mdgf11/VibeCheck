@@ -103,7 +103,6 @@ public class SongService {
         artist.setDiscovered(true);
         JsonNode albumsJsonNode = spotifyTokenService.getArtistsAlbums(artist.getSpotifyId());
         for (JsonNode albumJsonNode : albumsJsonNode) {
-            
             Optional<Album> albumOptional = albumRepository.findByAlbumNameWithArtist(
                 albumJsonNode
                     .get("name")
@@ -156,10 +155,10 @@ public class SongService {
                     
             }
             Set<Artist> albumArtists = new HashSet<>();
-            for (JsonNode newArtistJsonNode : spotifyTokenService.getArtistsFull(newArtistIds))
+            for (JsonNode newArtistJsonNode : spotifyTokenService.getArtistsFull(newArtistIds)) {
                 albumArtists.add(addArtist(newArtistJsonNode));
+            }
             albumArtists.addAll(foundArtists);
-
             // Get and create album tracks, and featured artists
             Set<Song> albumSongs = new HashSet<>();
             Set<Artist> featuredArtists = new HashSet<>();
@@ -255,7 +254,8 @@ public class SongService {
         if (!artist.isDiscovered() && !newArtists.contains(artist))
             newArtists.add(artist);
         if (newArtists.size() <= MAX_TREE_SIZE) {
-            addAlbums(artist);
+            if (artist.getPopularity() >= 10)
+                addAlbums(artist);
         }
     }
 
@@ -266,12 +266,10 @@ public class SongService {
             addArtist(newArtist.get());
             return newArtist.get();
         }
-        newArtist = Optional.of(new Artist(artistJsonNode
-                .get("name")
-                .asText(),
-                    artistJsonNode
-                        .get("id")
-                        .asText()));
+        String artistName = artistJsonNode.get("name").asText();
+        String artistId = artistJsonNode.get("id").asText();
+        int artistPopularity = artistJsonNode.get("popularity").asInt();
+        newArtist = Optional.of(new Artist(artistName, artistId, artistPopularity));
         System.out.println("Saving artist: " + newArtist.get().getName());
         artistRepository.save(newArtist.get());
 

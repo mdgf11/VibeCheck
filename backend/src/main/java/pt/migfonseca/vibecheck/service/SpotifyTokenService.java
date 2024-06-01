@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,8 +25,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Service
 public class SpotifyTokenService {
 
-    private String CLIENT_ID = "be0c1a2e2401445a8cb2e6b11bae9429";
-    private String CLIENT_SECRET = "690b188640e4489391caf3c889e3b107";
+    @Value("${env.spotify.id}")
+    private String CLIENT_ID;
+    @Value("${env.spotify.secret}")
+    private String CLIENT_SECRET;
     private String accessToken = null;
     private int expiresIn = 0;
     private LocalDateTime generatedDate = LocalDateTime.now();
@@ -34,7 +37,7 @@ public class SpotifyTokenService {
         URL url = new URL(urlString);
         try {
             try {
-                TimeUnit.MILLISECONDS.sleep(500);
+                TimeUnit.MILLISECONDS.sleep(300);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -67,10 +70,12 @@ public class SpotifyTokenService {
 
         } catch (IOException ioException) {
             try {
-                TimeUnit.SECONDS.sleep(10);
+                TimeUnit.SECONDS.sleep(3);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+            System.out.println(CLIENT_ID);
+            System.out.println(CLIENT_SECRET);
             if (invalidToken())
                 generateToken();
             System.err.println(ioException.getLocalizedMessage());
