@@ -1,5 +1,5 @@
-import router from "@/router";
 
+const env = import.meta.env;
 
 export async function getProfile() {
     const clientId = import.meta.env.VITE_APP_SPOTIFY_CLIENT_ID;
