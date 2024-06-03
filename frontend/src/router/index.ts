@@ -22,10 +22,6 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/callback:catchAll(\\?):code',
     redirect: '/search?:code'
-  },
-  {
-    path: '/search:catchAll(\\?):code',
-    redirect: '/search'
   }
 ]
 
