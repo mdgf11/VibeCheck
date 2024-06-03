@@ -23,7 +23,7 @@ async function redirectToAuthCodeFlow(clientId: string, currentPath: string) {
 
     localStorage.setItem("verifier", verifier);
 
-    const redirectUri = env.NODE_ENV === 'production'
+    const redirectUri = env.VITE_APP_NODE_ENV == 'production'
         ? `${env.VITE_APP_BASE_URL}/callback`
         : `${env.VITE_APP_BASE_URL}:${env.VITE_APP_PORT}/callback`;
 
@@ -60,7 +60,7 @@ async function generateCodeChallenge(codeVerifier: string) {
 
 export async function getAccessToken(clientId: string, code: string): Promise<string> {
     const verifier = localStorage.getItem("verifier");
-    const redirectUri = env.NODE_ENV === 'production'
+    const redirectUri = env.VITE_APP_NODE_ENV == 'production'
         ? `${env.VITE_APP_BASE_URL}/callback`
         : `${env.VITE_APP_BASE_URL}:${env.VITE_APP_PORT}/callback`;
 
