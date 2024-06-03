@@ -6,7 +6,6 @@ import dotenv from 'dotenv'
 // Load the appropriate .env file based on the mode
 dotenv.config({ path: `.env.${process.env.NODE_ENV}` })
 
-// Determine the base URL
 const baseURL = process.env.VERCEL_URL 
   ? `https://${process.env.VERCEL_URL}`
   : process.env.VITE_APP_BASE_URL;
