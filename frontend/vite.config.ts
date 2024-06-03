@@ -4,7 +4,7 @@ import { resolve } from 'path'
 import dotenv from 'dotenv'
 
 // Load the appropriate .env file based on the mode
-dotenv.config({ path: `.env.${process.env.NODE_ENV}` })
+dotenv.config({ path: `.env.${process.env.VITE_APP_NODE_ENV}` })
 
 const baseURL = process.env.VERCEL_URL 
   ? `https://${process.env.VERCEL_URL}`

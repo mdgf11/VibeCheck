@@ -5,8 +5,8 @@
   "scripts": {
     "serve": "vite",
     "build": "vite build",
-    "dev": "NODE_ENV=development vite --mode development",
-    "prod": "NODE_ENV=production vite --mode production"
+    "dev": "VITE_APP_NODE_ENV=development vite --mode development",
+    "prod": "VITE_APP_NODE_ENV=production vite --mode production"
   },
   "dependencies": {
     "dotenv": "^16.4.5",
