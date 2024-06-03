@@ -1,8 +1,6 @@
-import Song from "./Song"
+import { Song } from './Song';
 
-type Playlist = {
-    title: string,
-    songs: Song
+export interface Playlist {
+  title: string;
+  songs: Song[];
 }
-
-export default Playlist

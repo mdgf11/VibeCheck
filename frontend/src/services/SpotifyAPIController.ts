@@ -1,27 +1,29 @@
+import useUserStore from '@/stores/userStore';
 const env = import.meta.env;
 
-export async function getProfile() {
-    const clientId = env.VITE_APP_SPOTIFY_CLIENT_ID;
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get("code");
+export async function getProfile(currentPath: string) {
+  const clientId = env.VITE_APP_SPOTIFY_CLIENT_ID;
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("code");
 
-    if (!code) {
-        await redirectToAuthCodeFlow(clientId);
-    } else {
-        const accessToken = await getAccessToken(clientId, code);
-        const profile = await fetchProfile(accessToken);
-        console.log(profile);
-    }
+  const userStore = useUserStore();
+
+  if (!code) {
+    await redirectToAuthCodeFlow(clientId, currentPath);
+  } else {
+    userStore.setCode(code);  // Save code in user store and local storage
+    const accessToken = await getAccessToken(clientId, code);
+    const profile = await fetchProfile(accessToken);
+    console.log(profile);
+  }
 }
+async function redirectToAuthCodeFlow(clientId: string, currentPath: string) {
+    const verifier = await generateCodeVerifier(128);
+    const challenge = await generateCodeChallenge(verifier);
 
-async function redirectToAuthCodeFlow(clientId: string) {
-    const verifier = generateCodeVerifier(128);
-    const challenge = await generateCodeChallenge(await verifier);
+    localStorage.setItem("verifier", verifier);
 
-    localStorage.setItem("verifier", await verifier);
-
-    // Construct the redirect URI based on the environment
-    const redirectUri = env.VITE_APP_NODE_ENV === 'production'
+    const redirectUri = env.NODE_ENV === 'production'
         ? `${env.VITE_APP_BASE_URL}/callback`
         : `${env.VITE_APP_BASE_URL}:${env.VITE_APP_PORT}/callback`;
 
@@ -32,6 +34,7 @@ async function redirectToAuthCodeFlow(clientId: string) {
     params.append("scope", "user-read-private user-read-email");
     params.append("code_challenge_method", "S256");
     params.append("code_challenge", challenge);
+    params.append("state", encodeURIComponent(currentPath));
 
     window.location.href = "https://accounts.spotify.com/authorize?" + params.toString();
 }
@@ -57,7 +60,7 @@ async function generateCodeChallenge(codeVerifier: string) {
 
 export async function getAccessToken(clientId: string, code: string): Promise<string> {
     const verifier = localStorage.getItem("verifier");
-    const redirectUri = env.VITE_APP_NODE_ENV === 'production'
+    const redirectUri = env.NODE_ENV === 'production'
         ? `${env.VITE_APP_BASE_URL}/callback`
         : `${env.VITE_APP_BASE_URL}:${env.VITE_APP_PORT}/callback`;
 

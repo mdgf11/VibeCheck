@@ -1,10 +1,9 @@
-interface Song {
-    id: string,
-    title: string,
-    artist: string[],
-    date: number,
-    genre: string[],
-    tag: string[]
-}
-
-export default Song
+export interface Song {
+    id: string;
+    title: string;
+    artist: string[];
+    date: number;
+    genre: string[];
+    tag: string[];
+  }
+  
