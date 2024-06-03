@@ -2,7 +2,7 @@ import router from "@/router";
 
 
 export async function getProfile() {
-    const clientId = "eb29dc799c46426db32e568f3da11cea";
+    const clientId = import.meta.env.VITE_APP_SPOTIFY_CLIENT_ID;
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
 

@@ -1,7 +1,7 @@
 <template>
   <div class="header">
     <h3>VibeCheck</h3>
-    <ToggleButton class="login-button" />
+    <LoginButton class="login-button" />
 
   </div>
 </template>
@@ -10,11 +10,11 @@
 <script lang="ts">
     import { defineComponent } from "vue";
     import spotifyLogo from "@/assets/img/spotify-logo.png"
-    import ToggleButton from "./LoginButton.vue"
+    import LoginButton from "./LoginButton.vue"
 
     export default defineComponent({
         name: 'HeaderComponent',
-        components: { ToggleButton  },
+        components: { LoginButton  },
         data() {
             
             return {  spotifyLogo }
