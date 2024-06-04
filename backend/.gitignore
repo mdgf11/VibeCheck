@@ -1,2 +1,2 @@
-.env.prod
-.env.dev
+dev.properties
+prod.properties
