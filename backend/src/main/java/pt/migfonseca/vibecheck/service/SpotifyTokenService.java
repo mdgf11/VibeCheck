@@ -37,7 +37,7 @@ public class SpotifyTokenService {
         URL url = new URL(urlString);
         try {
             try {
-                TimeUnit.MILLISECONDS.sleep(300);
+                TimeUnit.MILLISECONDS.sleep(500);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }

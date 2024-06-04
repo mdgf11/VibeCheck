@@ -79,7 +79,6 @@ public class SongService {
         return newArtists.stream().map(artist -> artist.toDTO()).toList();
     }
     
-    
     private List<ArtistDTO> discoverAll() throws IOException {
         List<Artist> allArtists = artistRepository.findAll();
         List<Artist> fullNewArtists = new LinkedList<>();
@@ -254,7 +253,7 @@ public class SongService {
         if (!artist.isDiscovered() && !newArtists.contains(artist))
             newArtists.add(artist);
         if (newArtists.size() <= MAX_TREE_SIZE) {
-            if (artist.getPopularity() >= 10)
+            if (artist.getPopularity() >= 50)
                 addAlbums(artist);
         }
     }
