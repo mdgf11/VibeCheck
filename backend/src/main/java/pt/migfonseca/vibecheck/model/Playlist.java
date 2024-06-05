@@ -16,6 +16,10 @@ import lombok.EqualsAndHashCode;
 @PrimaryKeyJoinColumn(name = "playlistId")
 public class Playlist extends RaterEntity{
 
+    public Playlist(){
+        
+    }
+
     public Playlist(String name, List<Song> songs) {
         super();
         this.name = name;

@@ -180,6 +180,8 @@ public class SongService {
             }
             if (newAlbum.isPresent())
                 continue;
+            if ("single".equals(albumJsonNode.get("album_group").asText()))
+                continue;
             System.out.println("Saving album: " + albumName);
             newAlbum = Optional.of(new Album(albumName, albumSongs.stream().toList(), albumArtists.stream().toList(), featuredArtists.stream().toList(), releaseDate));
             albumRepository.save(newAlbum.get());
@@ -190,7 +192,6 @@ public class SongService {
     private void trackAndFeatures(JsonNode albumJsonNode, Set<Song> albumSongs, Set<Artist> albumArtists, Set<Artist> featuredArtists, LocalDate releaseDate) throws IOException {
         int offset = 0;
         JsonNode tracksNode = spotifyTokenService.getAlbumTracks(albumJsonNode.get("id").asText(), offset);
-
         do {
             for (JsonNode trackNode : tracksNode) {
                 List<Artist> foundArtists = new LinkedList<>();
@@ -253,7 +254,7 @@ public class SongService {
         if (!artist.isDiscovered() && !newArtists.contains(artist))
             newArtists.add(artist);
         if (newArtists.size() <= MAX_TREE_SIZE) {
-            if (artist.getPopularity() >= 50)
+            if (artist.getPopularity() >= 75)
                 addAlbums(artist);
         }
     }

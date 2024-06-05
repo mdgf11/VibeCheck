@@ -197,7 +197,7 @@ public class SpotifyTokenService {
         headers.put("Authorization", "Bearer " + accessToken);
         
         JsonNode albumsJsonNode = generateRequest("https://api.spotify.com/v1/artists/" +
-            spotifyId + "/albums?include_groups=album,appears_on" ,
+            spotifyId + "/albums?include_groups=album,appears_on,single" ,
             "GET",
             headers, "");
 
