@@ -86,6 +86,7 @@ public class SongService {
             .toList();
     }
 
+
     public List<ArtistDTO> addArtist(String name, int size) throws IOException {
         newArtists = new LinkedList<>();
         MAX_TREE_SIZE = size;
@@ -133,7 +134,6 @@ public class SongService {
         }
     }
 
-    
     @Transactional
     public void addAlbums(Artist artist) throws IOException {
         // Iterate through albums
@@ -302,7 +302,7 @@ public class SongService {
         }
     }
 
-    
+    @Transactional
     public Artist addArtist(JsonNode artistJsonNode) throws IOException {
         Optional<Artist> newArtist = artistRepository.findByName(artistJsonNode.get("name").asText());
         if (newArtist.isPresent()) {
