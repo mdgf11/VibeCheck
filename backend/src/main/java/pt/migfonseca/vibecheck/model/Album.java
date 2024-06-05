@@ -3,11 +3,14 @@ package pt.migfonseca.vibecheck.model;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -21,7 +24,12 @@ import pt.migfonseca.vibecheck.dto.AlbumDTO;
 @NoArgsConstructor
 public class Album extends RaterEntity{    
 
-    public Album(String albumName, List<Song> songs, List<Artist> albumArtists, List<Artist> featuredArtists, LocalDate date) {
+    public Album(String albumName, 
+            List<Song> songs,
+            List<Artist> albumArtists,
+            List<Artist> featuredArtists,
+            LocalDate date,
+            List<Image> images) {
         super();
         this.albumName = albumName;
         this.artists = albumArtists;
@@ -31,6 +39,7 @@ public class Album extends RaterEntity{
         this.features = featuredArtists;
         this.features.stream().forEach(feature -> feature.addFeature(this));
         this.date = date;
+        this.images = images;
     }
 
     private String albumName;
@@ -49,6 +58,9 @@ public class Album extends RaterEntity{
                 inverseJoinColumns = @JoinColumn(name="song_id"))
     private List<Song> songs;
 
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Image> images;
+
     public AlbumDTO toDTO() {
         AlbumDTO newAlbumDTO = new AlbumDTO();
         newAlbumDTO.setName(this.albumName);
@@ -65,6 +77,10 @@ public class Album extends RaterEntity{
             .stream()
             .map(feature -> feature.getName())
             .toList());
+        newAlbumDTO.setImages(images.stream()
+                .collect(Collectors.toMap(
+                        Image::getHeight,
+                        Image::getUrl)));
         return newAlbumDTO;
     }
 

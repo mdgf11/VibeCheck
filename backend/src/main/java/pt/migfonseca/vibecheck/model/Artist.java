@@ -2,11 +2,14 @@ package pt.migfonseca.vibecheck.model;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Collectors;
 
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.JoinTable;
 import jakarta.persistence.ManyToMany;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -50,8 +53,11 @@ public class Artist extends RaterEntity {
     private boolean discovered = false;
 
     private int popularity;
+    
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Image> images;
 
-    public Artist(String name, String spotifyId, int popularity) {
+    public Artist(String name, String spotifyId, int popularity, List<Image> images) {
         super();
         this.name = name;
         this.spotifyId = spotifyId;
@@ -59,6 +65,19 @@ public class Artist extends RaterEntity {
         this.albums = new LinkedList<>();
         this.features = new LinkedList<>();
         this.songs = new LinkedList<>();
+        this.images = images;
+    }
+    
+    public void addAlbum(Album album) {
+        this.albums.add(album);
+    }
+
+    public void addSong(Song song) {
+        this.songs.add(song);
+    }
+
+    public void addFeature(Album album) {
+        this.features.add(album);
     }
 
     public ArtistDTO toDTO() {
@@ -77,15 +96,11 @@ public class Artist extends RaterEntity {
             .map(song -> song.getSongName())
             .toList());
         newArtistDTO.setSpotifyId(spotifyId);
+        newArtistDTO.setImages(images.stream()
+                .collect(Collectors.toMap(
+                        Image::getHeight,
+                        Image::getUrl)));
         return newArtistDTO;
-    }
-
-    public void addAlbum(Album album) {
-        this.albums.add(album);
-    }
-
-    public void addSong(Song song) {
-        this.songs.add(song);
     }
 
     @Override
@@ -122,11 +137,7 @@ public class Artist extends RaterEntity {
                 ", spotifyId='" + spotifyId + '\'' +
                 ", discovered=" + discovered +
                 '}';
-    }
-
-    public void addFeature(Album album) {
-        this.features.add(album);
-    }
+    }    
 
 }
 

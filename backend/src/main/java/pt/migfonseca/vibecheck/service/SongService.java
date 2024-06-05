@@ -3,13 +3,17 @@ package pt.migfonseca.vibecheck.service;
 import java.io.IOException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -20,6 +24,7 @@ import pt.migfonseca.vibecheck.dto.SongDTO;
 import pt.migfonseca.vibecheck.model.Album;
 import pt.migfonseca.vibecheck.model.Artist;
 import pt.migfonseca.vibecheck.model.Genre;
+import pt.migfonseca.vibecheck.model.Image;
 import pt.migfonseca.vibecheck.model.Song;
 import pt.migfonseca.vibecheck.model.ratings.GenreRating;
 import pt.migfonseca.vibecheck.repo.AlbumRepository;
@@ -53,11 +58,23 @@ public class SongService {
 
     private int MAX_TREE_SIZE = 1;
 
+    private int MIN_POPULARITY = 20;
+
     public List<ArtistDTO> getAllArtists() {
         return artistRepository
             .findAll()
             .stream()
             .map(artist -> artist.toDTO())
+            .toList();
+    }
+
+    public List<ArtistDTO> getAllUndicoveredArtistsWithPopularity(int size, int popularity) {
+        return artistRepository
+            .findAll()
+            .stream()
+            .filter(artist -> !artist.isDiscovered() && artist.getPopularity() >= popularity)
+            .map(artist -> artist.toDTO())
+            .limit(size)
             .toList();
     }
 
@@ -72,29 +89,50 @@ public class SongService {
     public List<ArtistDTO> addArtist(String name, int size) throws IOException {
         newArtists = new LinkedList<>();
         MAX_TREE_SIZE = size;
-        if (name.equals(""))
-            return discoverAll();
         JsonNode artistJsonNode = spotifyTokenService.searchArtist(name);
         addArtist(artistJsonNode);
         return newArtists.stream().map(artist -> artist.toDTO()).toList();
     }
     
-    private List<ArtistDTO> discoverAll() throws IOException {
+    @Async
+    @Transactional
+    public void discover(int size, int popularity) throws IOException {
+        MAX_TREE_SIZE = size;
+        MIN_POPULARITY = popularity;
         List<Artist> allArtists = artistRepository.findAll();
+
+        // Convert the list to a mutable list
+        List<Artist> mutableArtists = new ArrayList<>(allArtists);
+
+        // Ensure lazy collections are loaded if needed
+        for (Artist artist : mutableArtists) {
+            artist.getAlbums().size();
+        }
+
+        // Filter and convert to a mutable list
+        mutableArtists = mutableArtists.stream()
+            .filter(artist -> !artist.isDiscovered() 
+                && artist.getPopularity() >= MIN_POPULARITY)
+            .limit(size)
+            .collect(Collectors.toCollection(ArrayList::new));
+
+        // Sort the mutable list
+        mutableArtists.sort(Comparator.comparing(Artist::getPopularity).reversed());
+        mutableArtists.forEach(artist -> System.out.println(artist.getName()));
+
         List<Artist> fullNewArtists = new LinkedList<>();
-        for (Artist artist : allArtists) {
-            if (artist.isDiscovered())
-                continue;
-            MAX_TREE_SIZE = 1;
+
+        for (Artist artist : mutableArtists) {
             newArtists = new LinkedList<>();
             addArtist(artist);
             newArtists.stream().forEach(newArtist -> {
-                if (!fullNewArtists.contains(newArtist))
+                if (!fullNewArtists.contains(newArtist)) {
                     fullNewArtists.add(newArtist);
-            });            
+                }
+            });
         }
-        return fullNewArtists.stream().map(artist -> artist.toDTO()).toList();
     }
+
     
     @Transactional
     public void addAlbums(Artist artist) throws IOException {
@@ -183,7 +221,13 @@ public class SongService {
             if ("single".equals(albumJsonNode.get("album_group").asText()))
                 continue;
             System.out.println("Saving album: " + albumName);
-            newAlbum = Optional.of(new Album(albumName, albumSongs.stream().toList(), albumArtists.stream().toList(), featuredArtists.stream().toList(), releaseDate));
+            List<Image> images = getImages(albumJsonNode.get("images"));
+            newAlbum = Optional.of(new Album(albumName,
+                    albumSongs.stream().toList(),
+                    albumArtists.stream().toList(),
+                    featuredArtists.stream().toList(),
+                    releaseDate,
+                    images));
             albumRepository.save(newAlbum.get());
         }
     }
@@ -253,9 +297,8 @@ public class SongService {
     private void addArtist(Artist artist) throws IOException {
         if (!artist.isDiscovered() && !newArtists.contains(artist))
             newArtists.add(artist);
-        if (newArtists.size() <= MAX_TREE_SIZE) {
-            if (artist.getPopularity() >= 75)
-                addAlbums(artist);
+        if (newArtists.size() <= MAX_TREE_SIZE && artist.getPopularity() >= MIN_POPULARITY) {            
+            addAlbums(artist);
         }
     }
 
@@ -269,7 +312,8 @@ public class SongService {
         String artistName = artistJsonNode.get("name").asText();
         String artistId = artistJsonNode.get("id").asText();
         int artistPopularity = artistJsonNode.get("popularity").asInt();
-        newArtist = Optional.of(new Artist(artistName, artistId, artistPopularity));
+        List<Image> images = getImages(artistJsonNode.get("images"));
+        newArtist = Optional.of(new Artist(artistName, artistId, artistPopularity, images));
         System.out.println("Saving artist: " + newArtist.get().getName());
         artistRepository.save(newArtist.get());
 
@@ -291,4 +335,17 @@ public class SongService {
         addArtist(newArtist.get());
         return newArtist.get();
     }
+
+    private List<Image> getImages(JsonNode jsonNode) {
+        List<Image> images = new ArrayList<>();
+        if (jsonNode.isArray()) {
+            for (JsonNode node : jsonNode) {
+                int height = node.get("height").asInt();
+                String url = node.get("url").asText();
+                images.add(new Image(height, url));
+            }
+        }
+        return images;
+    }
+
 }
