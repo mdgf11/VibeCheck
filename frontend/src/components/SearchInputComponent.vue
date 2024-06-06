@@ -68,7 +68,7 @@ export default defineComponent({
 
     const handleInput = () => {
       clearTimeout(timeout);
-      timeout = setTimeout(search, 100);
+      timeout = setTimeout(search, 200);
     };
 
     const search = async () => {

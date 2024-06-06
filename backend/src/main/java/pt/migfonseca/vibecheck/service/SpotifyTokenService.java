@@ -195,39 +195,56 @@ public class SpotifyTokenService {
     public JsonNode getArtistsAlbums(String spotifyId) throws IOException {
         if (invalidToken())
             generateToken();
-        Map<String, String> headers = new HashMap<String, String>();
+        Map<String, String> headers = new HashMap<>();
         headers.put("content-type", "application/x-www-form-urlencoded");
         headers.put("Authorization", "Bearer " + accessToken);
-
-        JsonNode albumsJsonNode = generateRequest("https://api.spotify.com/v1/artists/" +
-            spotifyId + "/albums?include_groups=album,appears_on,single" ,
-            "GET",
-            headers, "");
-
+    
+        List<JsonNode> allAlbums = new ArrayList<>();
+        int limit = 20;
+        int offset = 0;
+        JsonNode albumsJsonNode;
+    
+        do {
+            albumsJsonNode = generateRequest("https://api.spotify.com/v1/artists/" +
+                    spotifyId + "/albums?include_groups=album,appears_on,single&limit=" + limit + "&offset=" + offset,
+                    "GET",
+                    headers, "");
+    
+            for (JsonNode albumJsonNode : albumsJsonNode.get("items")) {
+                if (albumJsonNode.get("album_type").asText().equals("compilation"))
+                    continue;
+                allAlbums.add(albumJsonNode);
+            }
+    
+            offset += limit;
+        } while (albumsJsonNode.get("items").size() == limit);
+    
         List<String> ids = new ArrayList<>();
-        for (JsonNode albumJsonNode : albumsJsonNode.get("items")) {
+        for (JsonNode albumJsonNode : allAlbums) {
             ids.add(albumJsonNode.get("id").asText());
         }
-
-        List<JsonNode> allAlbums = new ArrayList<>();
+    
+        List<JsonNode> allAlbumDetails = new ArrayList<>();
         int batchSize = 20;
-
+    
         for (int i = 0; i < ids.size(); i += batchSize) {
             int end = Math.min(i + batchSize, ids.size());
             String batchIds = String.join(",", ids.subList(i, end));
-
+    
             JsonNode batchAlbumsJsonNode = generateRequest("https://api.spotify.com/v1/albums?ids=" + batchIds, "GET", headers, "");
             for (JsonNode album : batchAlbumsJsonNode.get("albums")) {
-                allAlbums.add(album);
+                allAlbumDetails.add(album);
             }
         }
-
+    
         ObjectMapper mapper = new ObjectMapper();
         ArrayNode finalArrayNode = mapper.createArrayNode();
-        finalArrayNode.addAll(allAlbums);
-
+        finalArrayNode.addAll(allAlbumDetails);
+    
         return finalArrayNode;
     }
+    
+    
     public JsonNode getAlbumTracks(String albumId, int offSet) throws IOException {
         if (invalidToken())
             generateToken();
