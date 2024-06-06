@@ -1,95 +1,206 @@
 <template>
-  <div class="login-button">
-    <div class="actual-button" @click="handleClick">
-      <h3 class="button-text">{{ text }}</h3>
-      <span class="logos">
-        <img class="login-logo" :src="loginLogo" v-if="!isLoggedIn" />
-        <img class="spotify-logo" :src="spotifyLogo" v-else />
-      </span>
+  <div class="header-container">
+    <div class="login-button">
+      <div class="actual-button" @click="handleClick">
+        <h3 class="button-text">{{ buttonText }}</h3>
+        <span class="logos">
+          <img class="login-logo" :src="loginLogo" v-if="!isLoggedIn" />
+          <div class="hamburger" :class="{ active: isDropdownOpen }" v-else>
+            <div class="line"></div>
+            <div class="line"></div>
+            <div class="line"></div>
+          </div>
+        </span>
+      </div>
+      <transition name="dropdown">
+        <div v-if="isDropdownOpen && isLoggedIn" class="dropdown-menu">
+          <button class="dropdown-item" @click="goToProfile">My Profile</button>
+          <button class="dropdown-item" @click="viewHistory">History</button>
+          <button class="dropdown-item" @click="logout">Logout</button>
+        </div>
+      </transition>
     </div>
+    <LoginModal v-if="showLoginModal" @close="showLoginModal = false" />
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, watch } from "vue";
-import spotifyLogo from "@/assets/img/spotify-logo.png";
+import { defineComponent, ref, computed } from "vue";
+import LoginModal from "@/components/LoginModal.vue";
 import loginLogo from "@/assets/img/login-logo.png";
-import { getProfile } from "@/services/SpotifyAPIController";
+import useUserStore from "@/stores/userStore";
 
 export default defineComponent({
   name: 'LoginButton',
-  props: {
-    isLoggedIn: {
-      type: Boolean,
-      required: true,
-    },
+  components: {
+    LoginModal
   },
-  data() {
-    return { 
-      text: this.isLoggedIn ? "Logged In" : "Log In", 
-      spotifyLogo, 
-      loginLogo 
-    };
-  },
-  methods: {
-    async handleClick() {
-      if (!this.isLoggedIn) {
-        const currentPath = this.$router.currentRoute.value.fullPath;
-        await getProfile(currentPath);
+  setup() {
+    const userStore = useUserStore();
+    const isDropdownOpen = ref(false);
+    const showLoginModal = ref(false);
+
+    const isLoggedIn = computed(() => userStore.getIsLoggedIn);
+
+    const buttonText = computed(() => {
+      return isLoggedIn.value ? userStore.getProfile?.display_name || "Log Out" : "Log In";
+    });
+
+    const handleClick = async () => {
+      if (!isLoggedIn.value) {
+        showLoginModal.value = true;
       } else {
-        // Handle logout if necessary
+        toggleDropdown();
       }
-    }
-  },
-  watch: {
-    isLoggedIn(newVal) {
-      this.text = newVal ? "Logged In" : "Log In";
-    }
+    };
+
+    const toggleDropdown = () => {
+      isDropdownOpen.value = !isDropdownOpen.value;
+    };
+
+    const goToProfile = () => {
+      console.log('Navigating to profile');
+      isDropdownOpen.value = false;
+    };
+
+    const viewHistory = () => {
+      console.log('Viewing history');
+      isDropdownOpen.value = false;
+    };
+
+    const logout = () => {
+      userStore.logout();
+      isDropdownOpen.value = false;
+    };
+
+    return {
+      isLoggedIn,
+      buttonText,
+      handleClick,
+      toggleDropdown,
+      isDropdownOpen,
+      showLoginModal,
+      goToProfile,
+      viewHistory,
+      logout,
+      loginLogo
+    };
   }
 });
 </script>
 
 <style scoped>
-.login-button {
-  display: inline-block;
+.header-container {
+  display: flex;
+  justify-content: flex-end;
+  padding: 10px;
+}
+
+.actual-button .logos {
+  display: flex;
+  align-items: center;
   user-select: none;
   -moz-user-select: none;
   -webkit-user-select: none;
   -ms-user-select: none;
+}
+
+.actual-button .login-logo {
+  width: 30px;
+  height: 30px;
+  vertical-align: middle; /* Ensure the logo aligns vertically with the text */
+}
+
+.hamburger {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  margin-left: 8px; /* Adjust the gap between the text and icon */
+}
+
+.line {
+  width: 100%;
+  height: 3.1px; /* Adjust to fit within the new size */
+  background-color: #cacbcf;
+  transition: all 0.3s ease;
+  border-radius: 2px; /* Add this line to make the ends round */
+}
+
+.hamburger.active .line:nth-child(1) {
+  transform: rotate(45deg) translate(6px, 5px);
+}
+
+.hamburger.active .line:nth-child(2) {
+  opacity: 0;
+}
+
+.hamburger.active .line:nth-child(3) {
+  transform: rotate(-45deg) translate(5px, -5px);
+}
+
+.login-button .actual-button:hover {
+  cursor: pointer;
+  
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: calc(100% + 5px);
+  right: 0;
+  background-color: #5A6082;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  z-index: 1;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.dropdown-item {
+  display: block;
+  padding: 8px 16px;
+  text-align: left;
+  width: 100%;
+  border: none;
+  background: none;
+  cursor: pointer;
+  color: #cacbcf;
+}
+
+.dropdown-item:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.dropdown-enter-active, .dropdown-leave-active {
+  transition: all 0.3s ease;
+}
+
+.dropdown-enter-from, .dropdown-leave-to {
+  transform: translateY(-10px);
+  opacity: 0;
+}
+
+.login-button {
+  display: inline-block;
   padding-top: 3px;
+  position: relative;
 }
 
 .login-button .actual-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  border: none; /* Remove border if any */
-  background: none; /* Make background transparent */
+  border: none;
+  background: none;
+  color: #cacbcf;
+  font-size: 18px;
+  font-weight: bold;
 }
 
-.actual-button .login-logo {
-  width: 30px;
-  height: 30px;
-  margin-left: 2px; /* Adjust spacing as needed */
-
-}
-
-.actual-button .spotify-logo {
-  width: 25px;
-  height: 25px;
-  margin-left: 10px; /* Adjust spacing as needed */
-}
-
-.login-button .actual-button .button-text {
-  font-size: 25px; /* Same size as the header text */
-  margin-left: 10px;
-}
-
-.login-button .actual-button:hover {
-  cursor: pointer;
-  user-select: none;
-  -moz-user-select: none;
-  -webkit-user-select: none;
-  -ms-user-select: none;
+.actual-button .button-text {
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 1; /* Ensure line-height is consistent */
 }
 </style>

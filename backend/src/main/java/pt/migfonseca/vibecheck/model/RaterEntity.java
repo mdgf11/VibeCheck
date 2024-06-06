@@ -10,20 +10,24 @@ import jakarta.persistence.Inheritance;
 import static jakarta.persistence.InheritanceType.JOINED;
 import jakarta.persistence.OneToMany;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import pt.migfonseca.vibecheck.dto.SearchResponseDTO;
 import pt.migfonseca.vibecheck.model.ratings.GenreRating;
 import pt.migfonseca.vibecheck.model.ratings.VibeRating;
 
 @Data
 @Entity(name="raterEntity")
 @Inheritance(strategy = JOINED)
-@NoArgsConstructor
 public abstract class RaterEntity {
     @Id
     @GeneratedValue
     protected Long raterEntityId;
 
     protected String spotifyId;
+
+    protected RaterEntity() {
+        this.genreRatings = new LinkedList<>();
+        this.vibeRatings = new LinkedList<>();
+    }
     
     @OneToMany(mappedBy="raterEntity")
     protected List<GenreRating> genreRatings;
@@ -31,16 +35,11 @@ public abstract class RaterEntity {
     @OneToMany(mappedBy="raterEntity")
     protected List<VibeRating> vibeRatings;
     
-    public GenreRating addGenreRating(Genre genre, long ratingValue) {
-        GenreRating genreRating = new GenreRating(ratingValue);
-        genreRating.setGenre(genre);
-        genreRating.setGenreId(genre.getGenreId());
-        genreRating.setRaterEntity(this);
-        genreRating.setRaterEntityId(this.raterEntityId);
-        if (this.genreRatings == null)
-            this.genreRatings = new LinkedList<>();
+    public GenreRating addGenreRating(GenreRating genreRating) {
         this.genreRatings.add(genreRating);
-        genre.getRatings().add(genreRating);
         return genreRating;
     }
+
+    abstract public SearchResponseDTO toResponseDTO();
+
 }

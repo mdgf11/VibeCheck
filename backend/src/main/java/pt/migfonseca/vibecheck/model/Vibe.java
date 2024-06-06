@@ -7,6 +7,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.PrimaryKeyJoinColumn;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import pt.migfonseca.vibecheck.dto.SearchResponseDTO;
 import pt.migfonseca.vibecheck.model.ratings.VibeRating;
 
 @Data
@@ -15,9 +16,14 @@ import pt.migfonseca.vibecheck.model.ratings.VibeRating;
 @PrimaryKeyJoinColumn(name = "vibeId")
 public class Vibe extends RaterEntity{
 
-    private String title;
+    private String name;
     
     @OneToMany(mappedBy="vibe")
     private List<VibeRating> vibeRatings;
+
+    @Override
+    public SearchResponseDTO toResponseDTO() {
+        return new SearchResponseDTO(this.name, "vibe");
+    }
 
 }

@@ -5,12 +5,12 @@
       <h2 class="title">{{ playlist.title }}</h2>
     </div>
     <div class="playlist-container">
-      <div v-for="song in playlist.songs" :key="song.id" class="song-item">
-        <h3>{{ song.title }}</h3>
-        <p>Artist: {{ song.artist.join(', ') }}</p>
+      <div v-for="song in playlist.songs" :key="song.name" class="song-item">
+        <h3>{{ song.name }}</h3>
+        <p>Artist: {{ song.artists.join(', ') }}</p>
         <p>Date: {{ song.date }}</p>
-        <p>Genre: {{ song.genre.join(', ') }}</p>
-        <p>Tags: {{ song.tag.join(', ') }}</p>
+        <p>Genre: {{ song.genres.join(', ') }}</p>
+        <p>Tags: {{ song.vibes.join(', ') }}</p>
       </div>
     </div>
   </div>
@@ -29,8 +29,6 @@ export default defineComponent({
   components: { HeaderComponent },
   setup() {
     const playlistStore = usePlaylistStore();
-
-    playlistStore.loadPlaylistFromLocalStorage();
 
     return { playlist: playlistStore.playlist };
   }

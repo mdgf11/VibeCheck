@@ -1,29 +1,19 @@
 <template>
   <div class="header">
     <h3>VibeCheck</h3>
-    <LoginButton class="login-button" :isLoggedIn="isLoggedIn" />
+    <LoginButton class="login-button" />
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, onBeforeMount } from "vue";
+import { defineComponent } from "vue";
 import LoginButton from "./LoginButton.vue";
-import useUserStore from "@/stores/userStore";
 
 export default defineComponent({
   name: 'HeaderComponent',
   components: { LoginButton },
   setup() {
-    const userStore = useUserStore();
-
-    onBeforeMount(() => {
-      userStore.loadCodeFromSessionStorage();
-      console.log(userStore.isLoggedIn);
-    });
-
-    const isLoggedIn = computed(() => userStore.isLoggedIn);
-
-    return { isLoggedIn };
+    return {};
   }
 });
 </script>

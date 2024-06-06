@@ -1,5 +1,6 @@
 package pt.migfonseca.vibecheck.repo;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -13,14 +14,17 @@ import pt.migfonseca.vibecheck.model.Artist;
 @RepositoryRestResource
 public interface AlbumRepository extends JpaRepository<Album, Long> {    
     @Query("SELECT a FROM Album a JOIN a.artists art WHERE a.albumName = :albumName AND art = :artist")
-    Optional<Album> findByAlbumNameWithArtist(@Param("albumName") String name, @Param("artist") Artist artist);
+    Optional<Album> findByNameWithArtist(@Param("albumName") String name, @Param("artist") Artist artist);
 
     @Query("SELECT a FROM Album a JOIN a.features feat WHERE a.albumName = :albumName AND feat = :feature")
-    Optional<Album> findByAlbumNameWithFeature(@Param("albumName") String name, @Param("feature") Artist artist);
+    Optional<Album> findByNameWithFeature(@Param("albumName") String name, @Param("feature") Artist artist);
 
     @Query("SELECT COUNT(a) > 0 FROM Album a JOIN a.artists art WHERE a.albumName = :albumName AND art = :artist")
-    boolean existsByAlbumNameWithArtist(@Param("albumName") String albumName, @Param("artist") Artist artist);
+    boolean existsByNameWithArtist(@Param("albumName") String albumName, @Param("artist") Artist artist);
 
     @Query("SELECT COUNT(a) > 0 FROM Album a JOIN a.features feat WHERE a.albumName = :albumName AND feat = :feature")
-    boolean existsByAlbumNameWithFeature(@Param("albumName") String albumName, @Param("feature") Artist artist);
+    boolean existsByNameWithFeature(@Param("albumName") String albumName, @Param("feature") Artist artist);
+
+    List<Album> findByAlbumNameContainingIgnoreCase(String name);
+
 }

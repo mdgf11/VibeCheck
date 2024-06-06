@@ -16,6 +16,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import pt.migfonseca.vibecheck.dto.AlbumDTO;
+import pt.migfonseca.vibecheck.dto.SearchResponseDTO;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
@@ -28,8 +29,10 @@ public class Album extends RaterEntity{
             List<Song> songs,
             List<Artist> albumArtists,
             List<Artist> featuredArtists,
-            LocalDate date,
-            List<Image> images) {
+            List<Image> images,
+            int popularity,
+            LocalDate date
+            ) {
         super();
         this.albumName = albumName;
         this.artists = albumArtists;
@@ -40,6 +43,7 @@ public class Album extends RaterEntity{
         this.features.stream().forEach(feature -> feature.addFeature(this));
         this.date = date;
         this.images = images;
+        this.popularity = popularity;
     }
 
     private String albumName;
@@ -61,6 +65,8 @@ public class Album extends RaterEntity{
     @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Image> images;
 
+    private int popularity;
+
     public AlbumDTO toDTO() {
         AlbumDTO newAlbumDTO = new AlbumDTO();
         newAlbumDTO.setName(this.albumName);
@@ -68,15 +74,23 @@ public class Album extends RaterEntity{
         newAlbumDTO.setArtists(this.artists
             .stream()
             .map(artist -> artist.getName())
-            .toList());
+            .collect(Collectors.toSet()));
         newAlbumDTO.setSongs(this.songs
             .stream()
             .map(song -> song.getSongName())
-            .toList());
+            .collect(Collectors.toSet()));
         newAlbumDTO.setFeatures(this.features
             .stream()
             .map(feature -> feature.getName())
-            .toList());
+            .collect(Collectors.toSet()));
+        newAlbumDTO.setGenres(this.genreRatings
+            .stream()
+            .map(genreRating -> genreRating.getGenre().getName())
+            .collect(Collectors.toSet()));
+        newAlbumDTO.setVibes(this.vibeRatings
+            .stream()
+            .map(genreRating -> genreRating.getVibe().getName())
+            .collect(Collectors.toSet()));
         newAlbumDTO.setImages(images.stream()
                 .collect(Collectors.toMap(
                         Image::getHeight,
@@ -118,6 +132,11 @@ public class Album extends RaterEntity{
                 ", songs=[" + songsString.toString() + "]" +
                 ", date=" + (date != null ? date.format(dateFormat) : "null") +
                 '}';
+    }
+
+    @Override
+    public SearchResponseDTO toResponseDTO() {
+        return new SearchResponseDTO(this.albumName, this.artists.get(0).getName(), "album");
     }
     
 }

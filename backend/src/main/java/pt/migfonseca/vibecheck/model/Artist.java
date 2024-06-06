@@ -17,6 +17,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import pt.migfonseca.vibecheck.dto.ArtistDTO;
+import pt.migfonseca.vibecheck.dto.SearchResponseDTO;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
@@ -86,15 +87,23 @@ public class Artist extends RaterEntity {
         newArtistDTO.setAlbums(this.albums
             .stream()
             .map(album -> album.getAlbumName())
-            .toList());
+            .collect(Collectors.toSet()));
         newArtistDTO.setFeatures(this.features
             .stream()
             .map(feature -> feature.getAlbumName())
-            .toList());
+            .collect(Collectors.toSet()));
         newArtistDTO.setSongs(this.getSongs()
             .stream()
             .map(song -> song.getSongName())
-            .toList());
+            .collect(Collectors.toSet()));
+        newArtistDTO.setGenres(this.genreRatings
+            .stream()
+            .map(genreRating -> genreRating.getGenre().getName())
+            .collect(Collectors.toSet()));
+        newArtistDTO.setVibes(this.vibeRatings
+            .stream()
+            .map(genreRating -> genreRating.getVibe().getName())
+            .collect(Collectors.toSet()));
         newArtistDTO.setSpotifyId(spotifyId);
         newArtistDTO.setImages(images.stream()
                 .collect(Collectors.toMap(
@@ -137,6 +146,11 @@ public class Artist extends RaterEntity {
                 ", spotifyId='" + spotifyId + '\'' +
                 ", discovered=" + discovered +
                 '}';
+    }
+
+    @Override
+    public SearchResponseDTO toResponseDTO() {
+        return new SearchResponseDTO(this.name, "artist");
     }    
 
 }

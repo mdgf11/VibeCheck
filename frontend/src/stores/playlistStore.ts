@@ -10,13 +10,18 @@ const usePlaylistStore = defineStore('playlist', {
       this.playlist = playlist;
       localStorage.setItem('currentPlaylist', JSON.stringify(playlist));
     },
-    loadPlaylistFromLocalStorage() {
-      const savedPlaylist = localStorage.getItem('currentPlaylist');
-      if (savedPlaylist) {
-        this.playlist = JSON.parse(savedPlaylist) as Playlist;
+  },
+  getters: {
+    getPlaylist: (state) => {
+      if (state.playlist === null) {
+        const storedPlaylist = localStorage.getItem('currentPlaylist');
+        if (storedPlaylist) {
+          state.playlist = JSON.parse(storedPlaylist);
+        }
       }
-    }
-  }
+      return state.playlist;
+    },
+  },
 });
 
 export default usePlaylistStore;

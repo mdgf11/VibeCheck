@@ -1,5 +1,6 @@
 package pt.migfonseca.vibecheck.repo;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,4 +11,6 @@ import pt.migfonseca.vibecheck.model.Genre;
 @RepositoryRestResource
 public interface GenreRepository extends JpaRepository<Genre, Long> {    
         public Optional<Genre> findByName(String name);
+
+        public List<Genre> findByNameContainingIgnoreCase(String query);
 }

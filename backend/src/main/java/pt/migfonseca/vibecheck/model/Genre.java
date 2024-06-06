@@ -1,7 +1,7 @@
 package pt.migfonseca.vibecheck.model;
 
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -11,6 +11,7 @@ import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import pt.migfonseca.vibecheck.dto.SearchResponseDTO;
 import pt.migfonseca.vibecheck.model.ratings.GenreRating;
 
 @Entity
@@ -28,20 +29,18 @@ public class Genre {
 
     public Genre(String name) {
         this.name = name;
-        this.ratings = new HashSet<>();
+        this.ratings = new ArrayList<>();
     }
 
     @OneToMany(mappedBy = "genre")
-    Set<GenreRating> ratings;
+    List<GenreRating> ratings;
 
-    public GenreRating addGenreRating(RaterEntity raterEntity, long ratingValue) {
-        GenreRating genreRating = new GenreRating(ratingValue);
-        genreRating.setGenre(this);
-        genreRating.setGenreId(this.genreId);
-        genreRating.setRaterEntity(raterEntity);
-        genreRating.setRaterEntityId(raterEntity.getRaterEntityId());
+    public GenreRating addGenreRating(GenreRating genreRating) {
         this.ratings.add(genreRating);
-        raterEntity.getGenreRatings().add(genreRating);
         return genreRating;
+    }
+
+    public SearchResponseDTO toResponseDTO() {
+        return new SearchResponseDTO(this.name, "genre");
     }
 }

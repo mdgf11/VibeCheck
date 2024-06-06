@@ -1,22 +1,22 @@
 import useUserStore from '@/stores/userStore';
+import { Profile } from '@/types/Profile';
 const env = import.meta.env;
 
 export async function getProfile(currentPath: string) {
   const clientId = env.VITE_APP_SPOTIFY_CLIENT_ID;
-  const params = new URLSearchParams(window.location.search);
-  const code = params.get("code");
-
   const userStore = useUserStore();
+
+  const code = userStore.code
 
   if (!code) {
     await redirectToAuthCodeFlow(clientId, currentPath);
   } else {
-    userStore.setCode(code);  // Save code in user store and local storage
     const accessToken = await getAccessToken(clientId, code);
+    userStore.setToken(accessToken);
     const profile = await fetchProfile(accessToken);
-    console.log(profile);
   }
 }
+
 async function redirectToAuthCodeFlow(clientId: string, currentPath: string) {
     const verifier = await generateCodeVerifier(128);
     const challenge = await generateCodeChallenge(verifier);
@@ -82,10 +82,14 @@ export async function getAccessToken(clientId: string, code: string): Promise<st
     return access_token;
 }
 
-async function fetchProfile(token: string): Promise<JSON> {
+async function fetchProfile(token: string): Promise<Profile> {
     const result = await fetch("https://api.spotify.com/v1/me", {
         method: "GET", headers: { Authorization: `Bearer ${token}` }
     });
-
-    return await result.json();
+    const userStore = useUserStore();
+    const profile: Profile = await result.json();
+    userStore.login(profile);
+    console.log(profile);
+    
+    return profile;
 }

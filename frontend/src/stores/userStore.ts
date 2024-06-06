@@ -1,34 +1,75 @@
+import { Profile } from '@/types/Profile';
 import { defineStore } from 'pinia';
+
+// Define constants
+const SPOTIFY_CODE_KEY = 'spotifyCode';
+const SPOTIFY_TOKEN_KEY = 'spotifyToken';
+const PROFILE_KEY = 'profile';
+const IS_LOGGED_IN_KEY = 'isLoggedIn';
 
 const useUserStore = defineStore('user', {
   state: () => ({
     code: null as string | null,
+    token: null as string | null,
     isLoggedIn: false,
+    profile: null as Profile | null,
   }),
+  getters: {
+    getToken(state): string | null {
+      if (state.token === null) {
+        const savedToken = sessionStorage.getItem(SPOTIFY_TOKEN_KEY);
+        if (savedToken) {
+          state.token = savedToken;
+        }
+      }
+      return state.token;
+    },
+    getIsLoggedIn(state): boolean {
+      if (state.isLoggedIn === false) {
+        const sessionIsLoggedIn = sessionStorage.getItem(IS_LOGGED_IN_KEY);
+        if (sessionIsLoggedIn === 'true') {
+          state.isLoggedIn = true;
+        }
+      }
+      return state.isLoggedIn;
+    },
+    getProfile(state): Profile | null {
+      if (state.profile === null) {
+        const savedProfile = sessionStorage.getItem(PROFILE_KEY);
+        if (savedProfile) {
+          state.profile = JSON.parse(savedProfile) as Profile;
+        }
+      }
+      return state.profile;
+    }
+  },
   actions: {
     setCode(code: string) {
-      console.log('Setting code in store:', code);
       this.code = code;
-      this.isLoggedIn = true;
-      sessionStorage.setItem('spotifyCode', code);
-      sessionStorage.setItem('isLoggedIn', 'true');
+      localStorage.setItem(SPOTIFY_CODE_KEY, code);
     },
-    loadCodeFromSessionStorage() {
-      const savedCode = sessionStorage.getItem('spotifyCode');
-      const sessionIsLoggedIn = sessionStorage.getItem('isLoggedIn');
-
-      if (savedCode && sessionIsLoggedIn) {
-        this.code = savedCode;
-        this.isLoggedIn = true;
-      } else {
-        this.logout();
+    setToken(token: string) {
+      this.token = token;
+      sessionStorage.setItem(SPOTIFY_TOKEN_KEY, token);
+    },
+    login(profile: Profile) {
+      this.profile = profile;
+      if (profile) {
+        sessionStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
       }
+      
+      this.isLoggedIn = true;
+      sessionStorage.setItem(IS_LOGGED_IN_KEY, 'true');
     },
     logout() {
-      this.code = null;
+      this.token = null;
       this.isLoggedIn = false;
-      sessionStorage.removeItem('spotifyCode');
-      sessionStorage.removeItem('isLoggedIn');
+      this.profile = null;
+      this.code = null;
+      localStorage.removeItem(SPOTIFY_CODE_KEY);
+      sessionStorage.removeItem(SPOTIFY_TOKEN_KEY);
+      sessionStorage.removeItem(IS_LOGGED_IN_KEY);
+      sessionStorage.removeItem(PROFILE_KEY);
     }
   }
 });

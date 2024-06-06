@@ -138,14 +138,19 @@ public class SongService {
     public void addAlbums(Artist artist) throws IOException {
         // Iterate through albums
         artist.setDiscovered(true);
+        Set<Genre> artistGenres = artist
+                .getGenreRatings()
+                .stream()
+                .map(genreRating -> genreRating.getGenre())
+                .collect(Collectors.toSet());
         JsonNode albumsJsonNode = spotifyTokenService.getArtistsAlbums(artist.getSpotifyId());
         for (JsonNode albumJsonNode : albumsJsonNode) {
-            Optional<Album> albumOptional = albumRepository.findByAlbumNameWithArtist(
+            Optional<Album> albumOptional = albumRepository.findByNameWithArtist(
                 albumJsonNode
                     .get("name")
                     .asText(), artist);
             if (!albumOptional.isPresent())
-                albumOptional = albumRepository.findByAlbumNameWithFeature(
+                albumOptional = albumRepository.findByNameWithFeature(
                     albumJsonNode
                         .get("name")
                         .asText(), artist);
@@ -201,7 +206,21 @@ public class SongService {
             Set<Artist> featuredArtists = new HashSet<>();
 
             String albumName = albumJsonNode.get("name").asText();
-            trackAndFeatures(albumJsonNode, albumSongs, albumArtists, featuredArtists, releaseDate);
+            Set<Genre> genres = Set.copyOf(artistGenres);
+            for (JsonNode genre: albumJsonNode.get("genres")) {
+                Optional<Genre> genreOptional = genreRepository.findByName(genre.asText());
+                if (!genreOptional.isPresent()) {
+                    genreOptional = Optional.of(new Genre(genre.asText()));
+                    genreRepository.save(genreOptional.get());
+                }
+                genres.add(genreOptional.get());
+            }
+            trackAndFeatures(albumJsonNode,
+                    albumSongs,
+                    albumArtists,
+                    featuredArtists,
+                    genres,
+                    releaseDate);
             // Finally create the album in question
             // Also updates every song and artist with the new album
 
@@ -209,34 +228,50 @@ public class SongService {
             for (Artist albumArtist : albumArtists) {
                 if (newAlbum.isPresent())
                     break;
-                newAlbum = albumRepository.findByAlbumNameWithArtist(albumName, albumArtist);
+                newAlbum = albumRepository.findByNameWithArtist(albumName, albumArtist);
             }
             for (Artist featuredArtist : featuredArtists) {
                 if (newAlbum.isPresent())
                     break;
-                newAlbum = albumRepository.findByAlbumNameWithArtist(albumName, featuredArtist);
+                newAlbum = albumRepository.findByNameWithArtist(albumName, featuredArtist);
             }
             if (newAlbum.isPresent())
                 continue;
-            if ("single".equals(albumJsonNode.get("album_group").asText()))
+            if ("single".equals(albumJsonNode.get("album_type").asText())) {
                 continue;
+            }
             System.out.println("Saving album: " + albumName);
             List<Image> images = getImages(albumJsonNode.get("images"));
+            int popularity = albumJsonNode.get("popularity").asInt();
             newAlbum = Optional.of(new Album(albumName,
                     albumSongs.stream().toList(),
                     albumArtists.stream().toList(),
                     featuredArtists.stream().toList(),
-                    releaseDate,
-                    images));
+                    images,
+                    popularity,
+                    releaseDate));
             albumRepository.save(newAlbum.get());
+            for (Genre genre: genres)
+                genreRatingRepository.save(new GenreRating(newAlbum.get(), genre, 5));
+
         }
     }
 
     @Transactional
-    private void trackAndFeatures(JsonNode albumJsonNode, Set<Song> albumSongs, Set<Artist> albumArtists, Set<Artist> featuredArtists, LocalDate releaseDate) throws IOException {
+    private void trackAndFeatures(JsonNode albumJsonNode,
+            Set<Song> albumSongs,
+            Set<Artist> albumArtists,
+            Set<Artist> featuredArtists,
+            Set<Genre> genres,
+            LocalDate releaseDate) throws IOException {
+
         int offset = 0;
-        JsonNode tracksNode = spotifyTokenService.getAlbumTracks(albumJsonNode.get("id").asText(), offset);
+        int stride = 50;
+        JsonNode tracksNode = albumJsonNode.get("tracks").get("items");
+        
+        boolean isLastBatch;
         do {
+            isLastBatch = tracksNode.size() < stride;
             for (JsonNode trackNode : tracksNode) {
                 List<Artist> foundArtists = new LinkedList<>();
                 Set<String> newArtistIds = new HashSet<>();
@@ -249,9 +284,8 @@ public class SongService {
                         foundArtists.add(trackArtist.get());
                     } else
                         foundArtists.add(trackArtist.get());
-                
-                    
                 }
+                
                 Set<Artist> trackArtists = new HashSet<>();
                 for (JsonNode newArtistJsonNode : spotifyTokenService.getArtistsFull(newArtistIds))
                     trackArtists.add(addArtist(newArtistJsonNode));
@@ -276,21 +310,33 @@ public class SongService {
                         break; 
                     }
                 }
-                    
+                
                 if (!newSong.isPresent()){
                     System.out.println("Saving song: " + trackName);
+                    List<Image> images = getImages(albumJsonNode.get("images"));
+                    int popularity = albumJsonNode.get("popularity").asInt();
 
-                    newSong = Optional.of(new Song(trackName, trackArtists.stream().toList(), releaseDate));
+                    newSong = Optional.of(new Song(trackName, 
+                            trackArtists
+                                .stream()
+                                .toList(),
+                            images,
+                            popularity,
+                            releaseDate));
                     songRepository.save(newSong.get());
-                }
-                
-                albumSongs.add(newSong.get());
-            }
-            offset+=20;
-            if (tracksNode.size() == 20)
-                tracksNode = spotifyTokenService.getAlbumTracks(albumJsonNode.get("id").asText(), offset);
+                    for (Genre genre : genres)
+                        genreRatingRepository.save(new GenreRating(newSong.get(), genre, 5));
 
-        } while (tracksNode.size() == 20);
+                    albumSongs.add(newSong.get());
+                }
+            }
+            offset += stride;
+            if (!isLastBatch) {
+                tracksNode = spotifyTokenService.getAlbumTracks(albumJsonNode.get("id").asText(), offset);
+            }
+            
+        } while (!isLastBatch);
+        
     }
     
     @Transactional
@@ -324,13 +370,7 @@ public class SongService {
                 genre = Optional.of(new Genre(genreNode.asText()));
                 genreRepository.save(genre.get());
             }
-            GenreRating genreRating = new GenreRating(5);
-            genreRating.setGenre(genre.get());
-            genreRating.setGenreId(genre.get().getGenreId());
-            genreRating.setRaterEntity(newArtist.get());
-            genreRating.setRaterEntityId(newArtist.get().getRaterEntityId());
-
-            genreRatingRepository.save(genreRating);
+            genreRatingRepository.save(new GenreRating(newArtist.get(), genre.get(), 5));
         }
         addArtist(newArtist.get());
         return newArtist.get();

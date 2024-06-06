@@ -1,5 +1,6 @@
 package pt.migfonseca.vibecheck.repo;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -19,4 +20,8 @@ public interface SongRepository extends JpaRepository<Song, Long> {
     @Query("SELECT s FROM Song s JOIN s.artists a WHERE s.songName = :songName AND a = :artist")
     Optional<Song> findByNameWithArtist(@Param("songName") String name, @Param("artist") Artist artist);
 
+    List<Song> findBySongNameContainingIgnoreCase(String name);
+
+    @Query("SELECT s FROM Song s JOIN s.artists a WHERE a = :artist")
+    List<Song> findAllByArtist(@Param("artist") Artist artist);
 }

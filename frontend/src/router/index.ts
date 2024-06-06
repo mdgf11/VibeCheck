@@ -3,6 +3,7 @@ import SearchView from '@/views/SearchView.vue';
 import GameView from '@/views/GameView.vue';
 import PlaylistView from '@/views/PlaylistView.vue';
 import useUserStore from '@/stores/userStore';
+import { getProfile } from '@/services/SpotifyAPIController';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -34,13 +35,15 @@ const routes: Array<RouteRecordRaw> = [
         const code = params.get("code");
         const state = params.get("state");
 
+        const targetPath = state ? decodeURIComponent(state) : '/search';
+
         if (code) {
           const userStore = useUserStore();
-          userStore.setCode(code);  // Save the code in the store and local storage
+          userStore.setCode(code);
+          getProfile(targetPath);
         }
 
-        const targetPath = state ? decodeURIComponent(state) : '/search';
-        this.$router.replace({ path: targetPath });  // Redirect without the code in the URL
+        this.$router.replace({ path: targetPath });
       }
     }
   }
