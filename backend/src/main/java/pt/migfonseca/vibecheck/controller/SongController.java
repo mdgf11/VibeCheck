@@ -33,8 +33,10 @@ public class SongController {
     }
 
     @PostMapping("/addArtist")
-    public ResponseEntity<List<ArtistDTO>> addArtist(@RequestParam String name, @RequestParam(required = false, defaultValue = "1") Integer size) throws IOException {
-        return new ResponseEntity<List<ArtistDTO>>(songService.addArtist(name, size), HttpStatus.OK);
+    public ResponseEntity<List<ArtistDTO>> addArtist(@RequestParam String name,
+            @RequestParam(required = false, defaultValue = "1") Integer size,
+            @RequestParam(required = false, defaultValue = "75") Integer popularity) throws IOException {
+        return new ResponseEntity<List<ArtistDTO>>(songService.addArtist(name, size, popularity), HttpStatus.OK);
     }
 
     @PostMapping("/discover")

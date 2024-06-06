@@ -54,12 +54,6 @@ public class SongService {
     @Autowired
     SpotifyTokenService spotifyTokenService;
 
-    private List<Artist> newArtists;
-
-    private int MAX_TREE_SIZE = 1;
-
-    private int MIN_POPULARITY = 20;
-
     public List<ArtistDTO> getAllArtists() {
         return artistRepository
             .findAll()
@@ -87,19 +81,16 @@ public class SongService {
     }
 
 
-    public List<ArtistDTO> addArtist(String name, int size) throws IOException {
-        newArtists = new LinkedList<>();
-        MAX_TREE_SIZE = size;
+    public List<ArtistDTO> addArtist(String name, int size, int popularity) throws IOException {
+        List<Artist> newArtists = new LinkedList<>();
         JsonNode artistJsonNode = spotifyTokenService.searchArtist(name);
-        addArtist(artistJsonNode);
+        addArtist(artistJsonNode, size, popularity, newArtists);
         return newArtists.stream().map(artist -> artist.toDTO()).toList();
     }
     
     @Async
     @Transactional
     public void discover(int size, int popularity) throws IOException {
-        MAX_TREE_SIZE = size;
-        MIN_POPULARITY = popularity;
         List<Artist> allArtists = artistRepository.findAll();
 
         // Convert the list to a mutable list
@@ -113,7 +104,7 @@ public class SongService {
         // Filter and convert to a mutable list
         mutableArtists = mutableArtists.stream()
             .filter(artist -> !artist.isDiscovered() 
-                && artist.getPopularity() >= MIN_POPULARITY)
+                && artist.getPopularity() >= popularity)
             .limit(size)
             .collect(Collectors.toCollection(ArrayList::new));
 
@@ -124,8 +115,8 @@ public class SongService {
         List<Artist> fullNewArtists = new LinkedList<>();
 
         for (Artist artist : mutableArtists) {
-            newArtists = new LinkedList<>();
-            addArtist(artist);
+            List<Artist> newArtists = new LinkedList<>();
+            addArtist(artist, size, popularity, newArtists);
             newArtists.stream().forEach(newArtist -> {
                 if (!fullNewArtists.contains(newArtist)) {
                     fullNewArtists.add(newArtist);
@@ -135,7 +126,7 @@ public class SongService {
     }
 
     @Transactional
-    public void addAlbums(Artist artist) throws IOException {
+    public void addAlbums(Artist artist, int size, int popularity, List<Artist> newArtists) throws IOException {
         // Iterate through albums
         artist.setDiscovered(true);
         Set<Genre> artistGenres = artist
@@ -159,10 +150,10 @@ public class SongService {
 
                 for (Artist albumArtist: albumOptional.get().getArtists())
                     if (!albumArtist.isDiscovered())
-                        addArtist(albumArtist);
+                        addArtist(albumArtist, size, popularity, newArtists);
                 for (Artist albumArtist: albumOptional.get().getFeatures())
                     if (!albumArtist.isDiscovered())
-                        addArtist(albumArtist);
+                        addArtist(albumArtist, size, popularity, newArtists);
                 continue;
             }
 
@@ -189,7 +180,7 @@ public class SongService {
                 if (!albumArtist.isPresent())
                     newArtistIds.add(artistJsonNode.get("id").asText());
                 else if (!albumArtist.get().isDiscovered()) {
-                    addArtist(albumArtist.get());
+                    addArtist(albumArtist.get(), size, popularity, newArtists);
                     foundArtists.add(albumArtist.get());
                 } else 
                     foundArtists.add(albumArtist.get());
@@ -198,7 +189,7 @@ public class SongService {
             }
             Set<Artist> albumArtists = new HashSet<>();
             for (JsonNode newArtistJsonNode : spotifyTokenService.getArtistsFull(newArtistIds)) {
-                albumArtists.add(addArtist(newArtistJsonNode));
+                albumArtists.add(addArtist(newArtistJsonNode, size, popularity, newArtists));
             }
             albumArtists.addAll(foundArtists);
             // Get and create album tracks, and featured artists
@@ -220,7 +211,10 @@ public class SongService {
                     albumArtists,
                     featuredArtists,
                     genres,
-                    releaseDate);
+                    releaseDate,
+                    size,
+                    popularity,
+                    newArtists);
             // Finally create the album in question
             // Also updates every song and artist with the new album
 
@@ -242,13 +236,13 @@ public class SongService {
             }
             System.out.println("Saving album: " + albumName);
             List<Image> images = getImages(albumJsonNode.get("images"));
-            int popularity = albumJsonNode.get("popularity").asInt();
+            int newPopularity = albumJsonNode.get("popularity").asInt();
             newAlbum = Optional.of(new Album(albumName,
                     albumSongs.stream().toList(),
                     albumArtists.stream().toList(),
                     featuredArtists.stream().toList(),
                     images,
-                    popularity,
+                    newPopularity,
                     releaseDate));
             albumRepository.save(newAlbum.get());
             for (Genre genre: genres)
@@ -263,7 +257,10 @@ public class SongService {
             Set<Artist> albumArtists,
             Set<Artist> featuredArtists,
             Set<Genre> genres,
-            LocalDate releaseDate) throws IOException {
+            LocalDate releaseDate,
+            int size,
+            int popularity,
+            List<Artist> newArtists) throws IOException {
 
         int offset = 0;
         int stride = 50;
@@ -280,7 +277,7 @@ public class SongService {
                     if (!trackArtist.isPresent()) 
                         newArtistIds.add(artistJsonNode.get("id").asText());
                     else if (!trackArtist.get().isDiscovered()){
-                        addArtist(trackArtist.get());
+                        addArtist(trackArtist.get(), size, popularity, newArtists);
                         foundArtists.add(trackArtist.get());
                     } else
                         foundArtists.add(trackArtist.get());
@@ -288,7 +285,7 @@ public class SongService {
                 
                 Set<Artist> trackArtists = new HashSet<>();
                 for (JsonNode newArtistJsonNode : spotifyTokenService.getArtistsFull(newArtistIds))
-                    trackArtists.add(addArtist(newArtistJsonNode));
+                    trackArtists.add(addArtist(newArtistJsonNode, size, popularity, newArtists));
                 trackArtists.addAll(foundArtists);
 
                 // If the artist doesn't belong in the album it's a feature
@@ -314,14 +311,14 @@ public class SongService {
                 if (!newSong.isPresent()){
                     System.out.println("Saving song: " + trackName);
                     List<Image> images = getImages(albumJsonNode.get("images"));
-                    int popularity = albumJsonNode.get("popularity").asInt();
+                    int newPopularity = albumJsonNode.get("popularity").asInt();
 
                     newSong = Optional.of(new Song(trackName, 
                             trackArtists
                                 .stream()
                                 .toList(),
                             images,
-                            popularity,
+                            newPopularity,
                             releaseDate));
                     songRepository.save(newSong.get());
                     for (Genre genre : genres)
@@ -340,19 +337,19 @@ public class SongService {
     }
     
     @Transactional
-    private void addArtist(Artist artist) throws IOException {
+    private void addArtist(Artist artist, int size, int popularity, List<Artist> newArtists) throws IOException {
         if (!artist.isDiscovered() && !newArtists.contains(artist))
             newArtists.add(artist);
-        if (newArtists.size() <= MAX_TREE_SIZE && artist.getPopularity() >= MIN_POPULARITY) {            
-            addAlbums(artist);
+        if (newArtists.size() <= size && artist.getPopularity() >= popularity) {            
+            addAlbums(artist, size, popularity, newArtists);
         }
     }
 
     @Transactional
-    public Artist addArtist(JsonNode artistJsonNode) throws IOException {
+    public Artist addArtist(JsonNode artistJsonNode, int size, int popularity, List<Artist> newArtists) throws IOException {
         Optional<Artist> newArtist = artistRepository.findByName(artistJsonNode.get("name").asText());
         if (newArtist.isPresent()) {
-            addArtist(newArtist.get());
+            addArtist(newArtist.get(), size, popularity, newArtists);
             return newArtist.get();
         }
         String artistName = artistJsonNode.get("name").asText();
@@ -372,7 +369,7 @@ public class SongService {
             }
             genreRatingRepository.save(new GenreRating(newArtist.get(), genre.get(), 5));
         }
-        addArtist(newArtist.get());
+        addArtist(newArtist.get(), size, popularity, newArtists);
         return newArtist.get();
     }
 
