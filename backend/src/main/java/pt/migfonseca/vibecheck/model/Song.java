@@ -25,7 +25,12 @@ import pt.migfonseca.vibecheck.dto.SongDTO;
 @Table(name = "song")
 public class Song extends RaterEntity{    
 
-    public Song(String name, List<Artist> artists, List<Image> images, int popularity, LocalDate date) {
+    public Song(String name,
+            List<Artist> artists,
+            List<Image> images,
+            int popularity,
+            long duration,
+            LocalDate date) {
         super();
         this.songName = name;
         this.artists = artists;
@@ -34,6 +39,7 @@ public class Song extends RaterEntity{
         this.date = date;
         this.images = images;
         this.popularity = popularity;
+        this.duration = duration;
     }
 
     private String songName;
@@ -53,6 +59,8 @@ public class Song extends RaterEntity{
     private List<Image> images;
 
     private int popularity;
+
+    private long duration;
 
     public SongDTO toDTO() {
         SongDTO newSongDTO = new SongDTO();
@@ -74,6 +82,7 @@ public class Song extends RaterEntity{
             .map(genreRating -> genreRating.getVibe().getName())
             .collect(Collectors.toSet()));
         newSongDTO.setDate(this.date);
+        newSongDTO.setDuration(duration);
         return newSongDTO;
     }
 

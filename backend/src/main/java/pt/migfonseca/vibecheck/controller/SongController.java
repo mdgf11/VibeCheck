@@ -35,12 +35,12 @@ public class SongController {
     @PostMapping("/addArtist")
     public ResponseEntity<List<ArtistDTO>> addArtist(@RequestParam String name,
             @RequestParam(required = false, defaultValue = "1") Integer size,
-            @RequestParam(required = false, defaultValue = "75") Integer popularity) throws IOException {
+            @RequestParam(required = false, defaultValue = "0") Integer popularity) throws IOException {
         return new ResponseEntity<List<ArtistDTO>>(songService.addArtist(name, size, popularity), HttpStatus.OK);
     }
 
     @PostMapping("/discover")
-    public ResponseEntity<List<ArtistDTO>> discover(@RequestParam Integer size, @RequestParam Integer popularity) throws IOException {
+    public ResponseEntity<List<ArtistDTO>> discover(@RequestParam(required = false, defaultValue = "1") Integer size, @RequestParam(required = false, defaultValue = "75") Integer popularity) throws IOException {
         songService.discover(size, popularity);
         return new ResponseEntity<List<ArtistDTO>>(songService.getAllUndicoveredArtistsWithPopularity(size, popularity), HttpStatus.OK);
     }

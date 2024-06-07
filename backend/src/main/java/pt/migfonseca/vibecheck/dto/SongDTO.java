@@ -14,5 +14,6 @@ public class SongDTO {
     private Set<String> albums;
     private Set<String> genres;
     private Set<String> vibes;
+    private long duration;
     private LocalDate date;
 }   

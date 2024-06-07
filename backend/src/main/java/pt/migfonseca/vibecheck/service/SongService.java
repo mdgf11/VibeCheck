@@ -134,7 +134,7 @@ public class SongService {
                 .stream()
                 .map(genreRating -> genreRating.getGenre())
                 .collect(Collectors.toSet());
-        JsonNode albumsJsonNode = spotifyTokenService.getArtistsAlbums(artist.getSpotifyId());
+        JsonNode albumsJsonNode = spotifyTokenService.getArtistAlbums(artist.getSpotifyId());
         for (JsonNode albumJsonNode : albumsJsonNode) {
             Optional<Album> albumOptional = albumRepository.findByNameWithArtist(
                 albumJsonNode
@@ -231,7 +231,7 @@ public class SongService {
             }
             if (newAlbum.isPresent())
                 continue;
-            if ("single".equals(albumJsonNode.get("album_type").asText())) {
+            if (albumJsonNode.get("total_tracks").asInt() == 1) {
                 continue;
             }
             System.out.println("Saving album: " + albumName);
@@ -262,78 +262,70 @@ public class SongService {
             int popularity,
             List<Artist> newArtists) throws IOException {
 
-        int offset = 0;
-        int stride = 50;
-        JsonNode tracksNode = albumJsonNode.get("tracks").get("items");
-        
-        boolean isLastBatch;
-        do {
-            isLastBatch = tracksNode.size() < stride;
-            for (JsonNode trackNode : tracksNode) {
-                List<Artist> foundArtists = new LinkedList<>();
-                Set<String> newArtistIds = new HashSet<>();
-                for (JsonNode artistJsonNode : trackNode.get("artists")) {
-                    Optional<Artist> trackArtist = artistRepository.findByName(artistJsonNode.get("name").asText());
-                    if (!trackArtist.isPresent()) 
-                        newArtistIds.add(artistJsonNode.get("id").asText());
-                    else if (!trackArtist.get().isDiscovered()){
-                        addArtist(trackArtist.get(), size, popularity, newArtists);
-                        foundArtists.add(trackArtist.get());
-                    } else
-                        foundArtists.add(trackArtist.get());
+        // Get detailed track objects for the album
+        JsonNode tracksNode = spotifyTokenService.getAlbumTrackObjects(albumJsonNode.get("id").asText());
+
+        for (JsonNode trackNode : tracksNode) {
+            List<Artist> foundArtists = new LinkedList<>();
+            Set<String> newArtistIds = new HashSet<>();
+            for (JsonNode artistJsonNode : trackNode.get("artists")) {
+                Optional<Artist> trackArtist = artistRepository.findByName(artistJsonNode.get("name").asText());
+                if (!trackArtist.isPresent()) {
+                    newArtistIds.add(artistJsonNode.get("id").asText());
+                } else if (!trackArtist.get().isDiscovered()) {
+                    addArtist(trackArtist.get(), size, popularity, newArtists);
+                    foundArtists.add(trackArtist.get());
+                } else {
+                    foundArtists.add(trackArtist.get());
                 }
-                
-                Set<Artist> trackArtists = new HashSet<>();
-                for (JsonNode newArtistJsonNode : spotifyTokenService.getArtistsFull(newArtistIds))
-                    trackArtists.add(addArtist(newArtistJsonNode, size, popularity, newArtists));
-                trackArtists.addAll(foundArtists);
+            }
 
-                // If the artist doesn't belong in the album it's a feature
-                for (Artist trackArtist : trackArtists) {
-                    if (!albumArtists.contains(trackArtist) 
-                            && !featuredArtists.contains(trackArtist)){
-                        featuredArtists.add(trackArtist);
-                    }
+            Set<Artist> trackArtists = new HashSet<>();
+            for (JsonNode newArtistJsonNode : spotifyTokenService.getArtistsFull(newArtistIds)) {
+                trackArtists.add(addArtist(newArtistJsonNode, size, popularity, newArtists));
+            }
+            trackArtists.addAll(foundArtists);
+
+            // If the artist doesn't belong in the album it's a feature
+            for (Artist trackArtist : trackArtists) {
+                if (!albumArtists.contains(trackArtist) && !featuredArtists.contains(trackArtist)) {
+                    featuredArtists.add(trackArtist);
                 }
+            }
 
-                // Create the song in question
-                String trackName = trackNode.get("name").asText();
-                Optional<Song> newSong = Optional.empty();
+            // Create the song in question
+            String trackName = trackNode.get("name").asText();
+            Optional<Song> newSong = Optional.empty();
 
-                for (Artist trackArtist : trackArtists) {
-                    newSong = songRepository.findByNameWithArtist(trackName, trackArtist);
-                    if (newSong.isPresent()) {
-                        albumSongs.add(newSong.get());
-                        break; 
-                    }
-                }
-                
-                if (!newSong.isPresent()){
-                    System.out.println("Saving song: " + trackName);
-                    List<Image> images = getImages(albumJsonNode.get("images"));
-                    int newPopularity = albumJsonNode.get("popularity").asInt();
-
-                    newSong = Optional.of(new Song(trackName, 
-                            trackArtists
-                                .stream()
-                                .toList(),
-                            images,
-                            newPopularity,
-                            releaseDate));
-                    songRepository.save(newSong.get());
-                    for (Genre genre : genres)
-                        genreRatingRepository.save(new GenreRating(newSong.get(), genre, 5));
-
+            for (Artist trackArtist : trackArtists) {
+                newSong = songRepository.findByNameWithArtist(trackName, trackArtist);
+                if (newSong.isPresent()) {
                     albumSongs.add(newSong.get());
+                    break; 
                 }
             }
-            offset += stride;
-            if (!isLastBatch) {
-                tracksNode = spotifyTokenService.getAlbumTracks(albumJsonNode.get("id").asText(), offset);
+
+            if (!newSong.isPresent()) {
+                System.out.println("Saving song: " + trackName);
+                List<Image> images = getImages(albumJsonNode.get("images"));
+                int newPopularity = trackNode.get("popularity").asInt();
+                if (newPopularity == 0)
+                    newPopularity = albumJsonNode.get("popularity").asInt();
+                long duration = trackNode.get("duration_ms").asLong();
+                newSong = Optional.of(new Song(trackName, 
+                        trackArtists.stream().toList(),
+                        images,
+                        newPopularity,
+                        duration,
+                        releaseDate));
+                songRepository.save(newSong.get());
+                for (Genre genre : genres) {
+                    genreRatingRepository.save(new GenreRating(newSong.get(), genre, 5));
+                }
+
+                albumSongs.add(newSong.get());
             }
-            
-        } while (!isLastBatch);
-        
+        }
     }
     
     @Transactional
