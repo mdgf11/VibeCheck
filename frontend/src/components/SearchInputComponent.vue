@@ -187,6 +187,7 @@ input {
   border-radius: 30px;
   text-align: center; 
   font-family: 'Satoshi', sans-serif;
+  outline: none; /* Add this line */
 }
 
 input:hover {
@@ -359,3 +360,4 @@ input:hover {
 }
 
 </style>
+
