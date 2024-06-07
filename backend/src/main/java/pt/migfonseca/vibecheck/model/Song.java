@@ -87,6 +87,7 @@ public class Song extends RaterEntity{
                 .collect(Collectors.toMap(
                         Image::getHeight,
                         Image::getUrl)));
+        newSongDTO.setId(raterEntityId);
         return newSongDTO;
     }
 

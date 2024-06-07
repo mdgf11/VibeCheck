@@ -1,19 +1,26 @@
 <template>
   <div class="header">
-    <h3>VibeCheck</h3>
+    <h3 @click="redirectToHome">VibeCheck</h3>
     <LoginButton class="login-button" />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent } from "vue";
+import { useRouter } from "vue-router";
 import LoginButton from "./LoginButton.vue";
 
 export default defineComponent({
   name: 'HeaderComponent',
   components: { LoginButton },
   setup() {
-    return {};
+    const router = useRouter();
+    
+    const redirectToHome = () => {
+      router.push('/');
+    };
+
+    return { redirectToHome };
   }
 });
 </script>

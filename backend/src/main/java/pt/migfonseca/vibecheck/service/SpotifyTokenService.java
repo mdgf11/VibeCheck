@@ -35,6 +35,14 @@ public class SpotifyTokenService {
     private LocalDateTime generatedDate = LocalDateTime.now();
 
     private JsonNode sendRequest(String urlString, String method, Map<String, String> headers, String content) throws IOException {
+        try {
+            // Add a delay before each request
+            Thread.sleep(750); 
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt(); // Reset interrupted status
+            throw new IOException("Thread was interrupted during sleep", e);
+        }
+    
         URL url = new URL(urlString);
         HttpURLConnection http = (HttpURLConnection) url.openConnection();
         http.setRequestMethod(method);
@@ -69,6 +77,7 @@ public class SpotifyTokenService {
             http.disconnect();
         }
     }
+    
 
 
     private synchronized void generateToken() throws IOException {

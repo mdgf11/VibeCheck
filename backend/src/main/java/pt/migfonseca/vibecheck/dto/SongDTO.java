@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 public class SongDTO {
+    private long id;
     private String name;
     private Set<String> artists;
     private Set<String> albums;

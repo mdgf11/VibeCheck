@@ -126,125 +126,135 @@ public class SongService {
 
     @Transactional
     public void addAlbums(Artist artist, int size, int popularity, List<Artist> newArtists) throws IOException {
-        // Iterate through albums
+        // Set discovered to true initially
         artist.setDiscovered(true);
-        Set<Genre> artistGenres = artist
+        artistRepository.save(artist);
+
+        try {
+            // Iterate through albums
+            Set<Genre> artistGenres = artist
                 .getGenreRatings()
                 .stream()
                 .map(genreRating -> genreRating.getGenre())
                 .collect(Collectors.toSet());
-        
-        JsonNode albumsJsonNode = spotifyTokenService.getArtistAlbums(artist.getSpotifyId());
-        for (JsonNode albumJsonNode : albumsJsonNode) {
-            Optional<Album> albumOptional = albumRepository.findByNameWithArtist(
-                albumJsonNode
-                    .get("name")
-                    .asText(), artist);
-            if (!albumOptional.isPresent())
-                albumOptional = albumRepository.findByNameWithFeature(
+
+            JsonNode albumsJsonNode = spotifyTokenService.getArtistAlbums(artist.getSpotifyId());
+            for (JsonNode albumJsonNode : albumsJsonNode) {
+                Optional<Album> albumOptional = albumRepository.findByNameWithArtist(
                     albumJsonNode
                         .get("name")
                         .asText(), artist);
-            
-            if (albumOptional.isPresent()) {
-                for (Artist albumArtist: albumOptional.get().getArtists())
-                    if (!albumArtist.isDiscovered())
-                        addArtist(albumArtist, size, popularity, newArtists);
-                for (Artist albumArtist: albumOptional.get().getFeatures())
-                    if (!albumArtist.isDiscovered())
-                        addArtist(albumArtist, size, popularity, newArtists);
-                continue;
-            }
+                if (!albumOptional.isPresent())
+                    albumOptional = albumRepository.findByNameWithFeature(
+                        albumJsonNode
+                            .get("name")
+                            .asText(), artist);
 
-            // Get release date
-            LocalDate releaseDate = LocalDate.now();
-            try {
-                releaseDate = LocalDate.parse(albumJsonNode.get("release_date").asText(),
-                    DateTimeFormatter.ISO_LOCAL_DATE);
-            } catch (Exception e) {
-                try {
-                    releaseDate = LocalDate.ofYearDay(Integer.parseInt(albumJsonNode.get("release_date").asText()), 1);
-                } catch (Exception e2) {
-                    e.printStackTrace();
-                    e2.printStackTrace();
-                }                
-            }
-            
-            // Get and create album artists
-            Set<Artist> foundArtists = new HashSet<>();
-            Set<String> newArtistIds = new HashSet<>();
-            for (JsonNode artistJsonNode : albumJsonNode.get("artists")) {
-                String albumArtistName = artistJsonNode.get("name").asText();
-                Optional<Artist> albumArtist = artistRepository.findByName(albumArtistName);
-                if (!albumArtist.isPresent())
-                    newArtistIds.add(artistJsonNode.get("id").asText());
-                else if (!albumArtist.get().isDiscovered()) {
-                    addArtist(albumArtist.get(), size, popularity, newArtists);
-                    foundArtists.add(albumArtist.get());
-                } else 
-                    foundArtists.add(albumArtist.get());
-            }
-            Set<Artist> albumArtists = new HashSet<>();
-            for (JsonNode newArtistJsonNode : spotifyTokenService.getArtistsFull(newArtistIds)) {
-                albumArtists.add(addArtist(newArtistJsonNode, size, popularity, newArtists));
-            }
-            albumArtists.addAll(foundArtists);
-
-            // Get and create album tracks, and featured artists
-            Set<Song> albumSongs = new HashSet<>();
-            Set<Artist> featuredArtists = new HashSet<>();
-
-            String albumName = albumJsonNode.get("name").asText();
-            Set<Genre> genres = new HashSet<>(artistGenres); // Initialize with artist's genres
-            for (JsonNode genre: albumJsonNode.get("genres")) {
-                Optional<Genre> genreOptional = genreRepository.findByName(genre.asText());
-                if (!genreOptional.isPresent()) {
-                    genreOptional = Optional.of(new Genre(genre.asText()));
-                    genreRepository.save(genreOptional.get());
+                if (albumOptional.isPresent()) {
+                    for (Artist albumArtist: albumOptional.get().getArtists())
+                        if (!albumArtist.isDiscovered())
+                            addArtist(albumArtist, size, popularity, newArtists);
+                    for (Artist albumArtist: albumOptional.get().getFeatures())
+                        if (!albumArtist.isDiscovered())
+                            addArtist(albumArtist, size, popularity, newArtists);
+                    continue;
                 }
-                genres.add(genreOptional.get());
-            }
-            trackAndFeatures(albumJsonNode,
-                    albumSongs,
-                    albumArtists,
-                    featuredArtists,
-                    genres,
-                    releaseDate,
-                    size,
-                    popularity,
-                    newArtists);
-            // Finally create the album in question
-            // Also updates every song and artist with the new album
 
-            Optional<Album> newAlbum = Optional.empty();
-            for (Artist albumArtist : albumArtists) {
+                // Get release date
+                LocalDate releaseDate = LocalDate.now();
+                try {
+                    releaseDate = LocalDate.parse(albumJsonNode.get("release_date").asText(),
+                        DateTimeFormatter.ISO_LOCAL_DATE);
+                } catch (Exception e) {
+                    try {
+                        releaseDate = LocalDate.ofYearDay(Integer.parseInt(albumJsonNode.get("release_date").asText()), 1);
+                    } catch (Exception e2) {
+                        e.printStackTrace();
+                        e2.printStackTrace();
+                    }                
+                }
+
+                // Get and create album artists
+                Set<Artist> foundArtists = new HashSet<>();
+                Set<String> newArtistIds = new HashSet<>();
+                for (JsonNode artistJsonNode : albumJsonNode.get("artists")) {
+                    String albumArtistName = artistJsonNode.get("name").asText();
+                    Optional<Artist> albumArtist = artistRepository.findByName(albumArtistName);
+                    if (!albumArtist.isPresent())
+                        newArtistIds.add(artistJsonNode.get("id").asText());
+                    else if (!albumArtist.get().isDiscovered()) {
+                        addArtist(albumArtist.get(), size, popularity, newArtists);
+                        foundArtists.add(albumArtist.get());
+                    } else 
+                        foundArtists.add(albumArtist.get());
+                }
+                Set<Artist> albumArtists = new HashSet<>();
+                for (JsonNode newArtistJsonNode : spotifyTokenService.getArtistsFull(newArtistIds)) {
+                    albumArtists.add(addArtist(newArtistJsonNode, size, popularity, newArtists));
+                }
+                albumArtists.addAll(foundArtists);
+
+                // Get and create album tracks, and featured artists
+                Set<Song> albumSongs = new HashSet<>();
+                Set<Artist> featuredArtists = new HashSet<>();
+
+                String albumName = albumJsonNode.get("name").asText();
+                Set<Genre> genres = new HashSet<>(artistGenres); // Initialize with artist's genres
+                for (JsonNode genre: albumJsonNode.get("genres")) {
+                    Optional<Genre> genreOptional = genreRepository.findByName(genre.asText());
+                    if (!genreOptional.isPresent()) {
+                        genreOptional = Optional.of(new Genre(genre.asText()));
+                        genreRepository.save(genreOptional.get());
+                    }
+                    genres.add(genreOptional.get());
+                }
+                trackAndFeatures(albumJsonNode,
+                        albumSongs,
+                        albumArtists,
+                        featuredArtists,
+                        genres,
+                        releaseDate,
+                        size,
+                        popularity,
+                        newArtists);
+                // Finally create the album in question
+                // Also updates every song and artist with the new album
+
+                Optional<Album> newAlbum = Optional.empty();
+                for (Artist albumArtist : albumArtists) {
+                    if (newAlbum.isPresent())
+                        break;
+                    newAlbum = albumRepository.findByNameWithArtist(albumName, albumArtist);
+                }
+                for (Artist featuredArtist : featuredArtists) {
+                    if (newAlbum.isPresent())
+                        break;
+                    newAlbum = albumRepository.findByNameWithArtist(albumName, featuredArtist);
+                }
                 if (newAlbum.isPresent())
-                    break;
-                newAlbum = albumRepository.findByNameWithArtist(albumName, albumArtist);
+                    continue;
+                if (albumJsonNode.get("total_tracks").asInt() == 1) {
+                    continue;
+                }
+                System.out.println("Saving album: " + albumName);
+                List<Image> images = getImages(albumJsonNode.get("images"));
+                int newPopularity = albumJsonNode.get("popularity").asInt();
+                newAlbum = Optional.of(new Album(albumName,
+                        albumSongs.stream().toList(),
+                        albumArtists.stream().toList(),
+                        featuredArtists.stream().toList(),
+                        images,
+                        newPopularity,
+                        releaseDate));
+                albumRepository.save(newAlbum.get());
+                for (Genre genre: genres)
+                    genreRatingRepository.save(new GenreRating(newAlbum.get(), genre, 5));
             }
-            for (Artist featuredArtist : featuredArtists) {
-                if (newAlbum.isPresent())
-                    break;
-                newAlbum = albumRepository.findByNameWithArtist(albumName, featuredArtist);
-            }
-            if (newAlbum.isPresent())
-                continue;
-            if (albumJsonNode.get("total_tracks").asInt() == 1) {
-                continue;
-            }
-            System.out.println("Saving album: " + albumName);
-            List<Image> images = getImages(albumJsonNode.get("images"));
-            int newPopularity = albumJsonNode.get("popularity").asInt();
-            newAlbum = Optional.of(new Album(albumName,
-                    albumSongs.stream().toList(),
-                    albumArtists.stream().toList(),
-                    featuredArtists.stream().toList(),
-                    images,
-                    newPopularity,
-                    releaseDate));
-            albumRepository.save(newAlbum.get());
-            for (Genre genre: genres)
-                genreRatingRepository.save(new GenreRating(newAlbum.get(), genre, 5));
+        } catch (IOException e) {
+            // If there's a failure, set discovered to false
+            artist.setDiscovered(false);
+            artistRepository.save(artist);
+            throw e; // Re-throw the exception after setting discovered to false
         }
     }
 

@@ -1,6 +1,12 @@
 <template>
   <div>
-    <input type="text" v-model="message" :placeholder="defaultSearch" @input="handleInput">
+    <input 
+      type="text" 
+      v-model="message" 
+      :placeholder="defaultSearch" 
+      @input="handleInput" 
+      @keyup="handleInput" 
+    >
     <transition
       name="box"
       appear
@@ -35,7 +41,6 @@
 import { defineComponent, ref, computed } from "vue";
 import { useRouter } from 'vue-router';
 import usePlaylistStore from '@/stores/playlistStore';
-import { Playlist } from '@/types/Playlist';
 
 const env = import.meta.env;
 
@@ -87,39 +92,13 @@ export default defineComponent({
     const selectSuggestion = async (result: SearchResult) => {
       message.value = result.name;
       const { name, type } = result;
-      const response = await fetch(`${env.VITE_APP_BACKEND_URL}/playlist?query=${name}&type=${type}`);
-      const data = await response.json();
-      console.log(data);
       
-      // Create Playlist object
-      const playlist: Playlist = {
-        title: data.name,
-        songs: data.songs.map((song: any) => ({
-          name: song.name,
-          artists: song.artists,
-          date: song.date,
-          genres: song.genres,
-          vibes: song.vibes,
-          images: new Map<number, string>(Object.entries(song.images).map(([key, value]) => [Number(key), value as string])),
-          duration: song.duration,
-          popularity: song.popularity || 0 // Ensure a default value if popularity is missing
-        })),
-        artists: data.artists.map((artist: any) => ({
-          name: artist.name,
-          genres: artist.genres,
-          vibes: artist.vibes,
-          popularity: artist.popularity || 0, // Ensure a default value if popularity is missing
-          images: new Map<number, string>(Object.entries(artist.images).map(([key, value]) => [Number(key), value as string]))
-        }))
-      };
+      // Fetch and create the playlist using the store method
+      await playlistStore.fetchAndCreatePlaylist(name, type);
 
-  // Set the playlist
-  playlistStore.setPlaylist(playlist);
-
-  // Navigate to the playlist
-  router.push({ name: 'playlist' });
-};
-
+      // Navigate to the playlist
+      router.push({ name: 'playlist' });
+    };
 
     const toggleCategory = (category: string) => {
       expandedCategories.value[category] = !expandedCategories.value[category];
@@ -191,6 +170,7 @@ export default defineComponent({
   }
 });
 </script>
+
 
 <style scoped>
 body {
