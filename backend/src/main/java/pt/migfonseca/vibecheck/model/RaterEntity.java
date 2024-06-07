@@ -34,12 +34,16 @@ public abstract class RaterEntity {
 
     @OneToMany(mappedBy="raterEntity")
     protected List<VibeRating> vibeRatings;
-    
-    public GenreRating addGenreRating(GenreRating genreRating) {
-        this.genreRatings.add(genreRating);
-        return genreRating;
-    }
 
     abstract public SearchResponseDTO toResponseDTO();
+
+    public List<GenreRating> getGenreRatings() {
+        return this.genreRatings;
+    }
+
+    public void addGenreRatingToEntityAndGenre(GenreRating genreRating) {
+        this.genreRatings.add(genreRating);
+        genreRating.getGenre().getRatings().add(genreRating);
+    }    
 
 }

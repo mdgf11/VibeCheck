@@ -77,7 +77,7 @@ export default defineComponent({
         return;
       }
       try {
-        const response = await fetch(env.VITE_APP_BACKEND_URL +`/search?query=${message.value}`);
+        const response = await fetch(env.VITE_APP_BACKEND_URL + `/search?query=${message.value}`);
         searchResults.value = await response.json();
       } catch (error) {
         console.error("Failed to fetch search results:", error);
@@ -90,29 +90,28 @@ export default defineComponent({
       const response = await fetch(`${env.VITE_APP_BACKEND_URL}/playlist?query=${name}&type=${type}`);
       const data = await response.json();
       console.log(data);
-
+      
       // Create Playlist object
       const playlist: Playlist = {
         title: data.name,
         songs: data.songs.map((song: any) => ({
           name: song.name,
           artists: song.artists,
-          albums: song.albums,
+          date: song.date,
           genres: song.genres,
           vibes: song.vibes,
-          date: song.date
+          images: new Map<number, string>(Object.entries(song.images).map(([key, value]) => [Number(key), value as string])),
+          duration: song.duration,
+          popularity: song.popularity || 0 // Ensure a default value if popularity is missing
         })),
         artists: data.artists.map((artist: any) => ({
           name: artist.name,
-          albums: artist.albums,
-          features: artist.features,
-          songs: artist.songs,
           genres: artist.genres,
           vibes: artist.vibes,
-          spotifyId: artist.spotifyId,
-          images: artist.images
+          popularity: artist.popularity || 0, // Ensure a default value if popularity is missing
+          images: new Map<number, string>(Object.entries(artist.images).map(([key, value]) => [Number(key), value as string]))
         }))
-    };
+      };
 
   // Set the playlist
   playlistStore.setPlaylist(playlist);
@@ -120,6 +119,7 @@ export default defineComponent({
   // Navigate to the playlist
   router.push({ name: 'playlist' });
 };
+
 
     const toggleCategory = (category: string) => {
       expandedCategories.value[category] = !expandedCategories.value[category];

@@ -35,5 +35,5 @@ public class VibeRating {
                 insertable=false)
     private Vibe vibe;
 
-    private Long rating;
+    private double rating;
 }

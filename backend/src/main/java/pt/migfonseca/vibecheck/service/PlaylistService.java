@@ -91,12 +91,12 @@ public class PlaylistService {
         playlist.setArtists(artistRepository
             .findAllArtistsInSongs(artist)
             .stream()
-            .limit(2)
+            .limit(10)
             .toList());
         playlist.setSongs(songRepository
             .findAllByArtist(artist)
             .stream()
-            .limit(2)
+            .limit(10)
             .toList());
         playlistRepository.save(playlist);
         return playlist.toDto();

@@ -4,5 +4,8 @@ export interface Song {
     date: number;
     genres: string[];
     vibes: string[];
+    images: Map<number,string>;
+    duration: string;
+    popularity: number;
   }
   

@@ -1,6 +1,7 @@
 package pt.migfonseca.vibecheck.dto;
 
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.Set;
 
 import lombok.Data;
@@ -15,5 +16,6 @@ public class SongDTO {
     private Set<String> genres;
     private Set<String> vibes;
     private long duration;
+    private Map<Integer, String> images;
     private LocalDate date;
 }   

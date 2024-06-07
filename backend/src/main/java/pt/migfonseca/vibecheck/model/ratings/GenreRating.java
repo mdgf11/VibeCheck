@@ -16,10 +16,9 @@ import pt.migfonseca.vibecheck.model.RaterEntity;
 @NoArgsConstructor
 public class GenreRating {
 
-    public GenreRating(RaterEntity raterEntity, Genre genre, long rating) {
+    public GenreRating(RaterEntity raterEntity, Genre genre, double rating) {
         this.genreId = genre.getGenreId();
         this.genre = genre;
-        genre.addGenreRating(this);
         this.raterEntity = raterEntity;
         this.raterEntityId = raterEntity.getRaterEntityId();
         this.rating = rating;
@@ -44,5 +43,14 @@ public class GenreRating {
                 insertable=false)
     private Genre genre;
 
-    private long rating;
+    private double rating;
+
+    @Override
+    public String toString() {
+        return "GenreRating{" +
+                "genreId=" + genreId +
+                ", raterEntityId=" + raterEntityId +
+                ", rating=" + rating +
+                '}';
+    }
 }

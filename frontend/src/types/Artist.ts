@@ -3,5 +3,6 @@ export interface Artist {
     genres: string[];
     vibes: string[];
     popularity: number;
+    images: Map<number,string>;
 }
   

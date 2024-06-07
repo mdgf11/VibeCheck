@@ -35,12 +35,20 @@ public class Genre {
     @OneToMany(mappedBy = "genre")
     List<GenreRating> ratings;
 
-    public GenreRating addGenreRating(GenreRating genreRating) {
+    public void addGenreRating(GenreRating genreRating) {
         this.ratings.add(genreRating);
-        return genreRating;
     }
 
     public SearchResponseDTO toResponseDTO() {
         return new SearchResponseDTO(this.name, "genre");
     }
+
+    @Override
+    public String toString() {
+        return "Genre{" +
+                "genreId=" + genreId +
+                ", name='" + name + '\'' +
+                '}';
+    }
+
 }

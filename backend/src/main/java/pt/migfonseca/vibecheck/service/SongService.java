@@ -80,14 +80,13 @@ public class SongService {
             .toList();
     }
 
-
     public List<ArtistDTO> addArtist(String name, int size, int popularity) throws IOException {
         List<Artist> newArtists = new LinkedList<>();
         JsonNode artistJsonNode = spotifyTokenService.searchArtist(name);
         addArtist(artistJsonNode, size, popularity, newArtists);
         return newArtists.stream().map(artist -> artist.toDTO()).toList();
     }
-    
+
     @Async
     @Transactional
     public void discover(int size, int popularity) throws IOException {
@@ -134,6 +133,7 @@ public class SongService {
                 .stream()
                 .map(genreRating -> genreRating.getGenre())
                 .collect(Collectors.toSet());
+        
         JsonNode albumsJsonNode = spotifyTokenService.getArtistAlbums(artist.getSpotifyId());
         for (JsonNode albumJsonNode : albumsJsonNode) {
             Optional<Album> albumOptional = albumRepository.findByNameWithArtist(
@@ -147,7 +147,6 @@ public class SongService {
                         .asText(), artist);
             
             if (albumOptional.isPresent()) {
-
                 for (Artist albumArtist: albumOptional.get().getArtists())
                     if (!albumArtist.isDiscovered())
                         addArtist(albumArtist, size, popularity, newArtists);
@@ -184,20 +183,19 @@ public class SongService {
                     foundArtists.add(albumArtist.get());
                 } else 
                     foundArtists.add(albumArtist.get());
-
-                    
             }
             Set<Artist> albumArtists = new HashSet<>();
             for (JsonNode newArtistJsonNode : spotifyTokenService.getArtistsFull(newArtistIds)) {
                 albumArtists.add(addArtist(newArtistJsonNode, size, popularity, newArtists));
             }
             albumArtists.addAll(foundArtists);
+
             // Get and create album tracks, and featured artists
             Set<Song> albumSongs = new HashSet<>();
             Set<Artist> featuredArtists = new HashSet<>();
 
             String albumName = albumJsonNode.get("name").asText();
-            Set<Genre> genres = Set.copyOf(artistGenres);
+            Set<Genre> genres = new HashSet<>(artistGenres); // Initialize with artist's genres
             for (JsonNode genre: albumJsonNode.get("genres")) {
                 Optional<Genre> genreOptional = genreRepository.findByName(genre.asText());
                 if (!genreOptional.isPresent()) {
@@ -247,7 +245,6 @@ public class SongService {
             albumRepository.save(newAlbum.get());
             for (Genre genre: genres)
                 genreRatingRepository.save(new GenreRating(newAlbum.get(), genre, 5));
-
         }
     }
 
@@ -351,7 +348,7 @@ public class SongService {
         newArtist = Optional.of(new Artist(artistName, artistId, artistPopularity, images));
         System.out.println("Saving artist: " + newArtist.get().getName());
         artistRepository.save(newArtist.get());
-
+        
         // Creates genres
         for (JsonNode genreNode : artistJsonNode.get("genres")) {
             Optional<Genre> genre = genreRepository.findByName(genreNode.asText());
@@ -359,11 +356,14 @@ public class SongService {
                 genre = Optional.of(new Genre(genreNode.asText()));
                 genreRepository.save(genre.get());
             }
-            genreRatingRepository.save(new GenreRating(newArtist.get(), genre.get(), 5));
+            GenreRating genreRating = new GenreRating(newArtist.get(), genre.get(), 5);
+            newArtist.get().addGenreRatingToEntityAndGenre(genreRating);
+            genreRatingRepository.save(genreRating);
         }
         addArtist(newArtist.get(), size, popularity, newArtists);
         return newArtist.get();
     }
+    
 
     private List<Image> getImages(JsonNode jsonNode) {
         List<Image> images = new ArrayList<>();
@@ -376,5 +376,4 @@ public class SongService {
         }
         return images;
     }
-
 }

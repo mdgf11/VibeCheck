@@ -79,10 +79,14 @@ public class Song extends RaterEntity{
             .collect(Collectors.toSet()));
         newSongDTO.setVibes(this.vibeRatings
             .stream()
-            .map(genreRating -> genreRating.getVibe().getName())
+            .map(vibeRating -> vibeRating.getVibe().getName())
             .collect(Collectors.toSet()));
         newSongDTO.setDate(this.date);
         newSongDTO.setDuration(duration);
+        newSongDTO.setImages(images.stream()
+                .collect(Collectors.toMap(
+                        Image::getHeight,
+                        Image::getUrl)));
         return newSongDTO;
     }
 
