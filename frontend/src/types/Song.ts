@@ -8,4 +8,5 @@ export interface Song {
   images: Map<number,string>;
   duration: string;
   popularity: number;
+  albums: string[];
 }

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router';
 import SearchView from '@/views/SearchView.vue';
 import GameView from '@/views/GameView.vue';
 import PlaylistView from '@/views/PlaylistView.vue';
+import LeaderboardView from '@/views/LeaderboardView.vue';
 import useUserStore from '@/stores/userStore';
 import { getProfile } from '@/services/SpotifyAPIController';
 
@@ -9,6 +10,11 @@ const routes: Array<RouteRecordRaw> = [
   {
     path: '/search',
     name: 'search',
+    component: SearchView
+  },
+  {
+    path: '/',
+    name: 'default',
     component: SearchView
   },
   {
@@ -22,8 +28,9 @@ const routes: Array<RouteRecordRaw> = [
     component: PlaylistView
   },
   {
-    path: '/',
-    redirect: '/search'
+    path: '/leaderboard',
+    name: 'leaderboard',
+    component: LeaderboardView
   },
   {
     path: '/callback',

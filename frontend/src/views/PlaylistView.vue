@@ -191,7 +191,7 @@ export default defineComponent({
 }
 
 .section-title {
-  font-size: 12px;
+  font-size: 10px; /* Adjusted to make the section titles smaller */
   font-weight: bold;
   margin-right: 5px;
 }
@@ -371,4 +371,3 @@ export default defineComponent({
   }
 }
 </style>
-

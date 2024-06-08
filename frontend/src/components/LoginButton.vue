@@ -141,9 +141,24 @@ export default defineComponent({
   transform: rotate(-45deg) translate(5px, -5px);
 }
 
-.login-button .actual-button:hover {
+.login-button .actual-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px; /* Match font-size with nav-tab */
+  font-weight: bold;
+  line-height: 1; /* Ensure line-height is consistent */
+  color: #cacbcf;
   cursor: pointer;
-  
+  text-decoration: none;
+  padding: 10px 15px; /* Match padding with nav-tab */
+  border-radius: 5px;
+  background-color: rgba(202, 203, 207, 0.2);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.login-button .actual-button:hover {
+  background-color: rgba(202, 203, 207, 0.4); /* Slightly stronger background hover color */
 }
 
 .dropdown-menu {
@@ -187,20 +202,8 @@ export default defineComponent({
   position: relative;
 }
 
-.login-button .actual-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: none;
-  background: none;
-  color: #cacbcf;
-  font-size: 18px;
-  font-weight: bold;
-}
-
 .actual-button .button-text {
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 20px; /* Match font-size with nav-tab */
   line-height: 1; /* Ensure line-height is consistent */
 }
 </style>

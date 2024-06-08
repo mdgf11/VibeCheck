@@ -6,11 +6,48 @@
     <div class="song-details">
       <div class="song-info">
         <h3>{{ song.name }}</h3>
-        <div class="song-lists">
+        <div class="song-lists" ref="songLists">
           <div class="list-group">
             <ul>
-              <li v-for="(artist, index) in displayedArtists" :key="index">{{ artist }}</li>
+              <!-- Always display the first artist's button -->
+              <li>
+                <PlaylistButtonComponent :text="song.artists[0]" queryType="artist" />
+              </li>
             </ul>
+          </div>
+          <div class="expanded-lists" v-if="isExpanded">
+            <div class="list-group">
+              <ul>
+                <!-- Display additional artists only when expanded -->
+                <li v-for="(artist, index) in additionalArtists" :key="index">
+                  <PlaylistButtonComponent :text="artist" queryType="artist" />
+                </li>
+              </ul>
+            </div>
+            <div class="list-group">
+              <span class="list-title">Genres:</span>
+              <ul>
+                <li v-for="(genre, index) in song.genres" :key="index">
+                  <PlaylistButtonComponent :text="genre" queryType="genre" />
+                </li>
+              </ul>
+            </div>
+            <div class="list-group">
+              <span class="list-title">Vibes:</span>
+              <ul>
+                <li v-for="(vibe, index) in song.vibes" :key="index">
+                  <PlaylistButtonComponent :text="vibe" queryType="vibe" />
+                </li>
+              </ul>
+            </div>
+            <div class="list-group" v-if="song.albums.length">
+              <span class="list-title">Albums:</span>
+              <ul>
+                <li v-for="(album, index) in song.albums" :key="index">
+                  <PlaylistButtonComponent :text="album" queryType="album" />
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -23,12 +60,16 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType } from "vue";
+import { defineComponent, PropType, ref, nextTick } from "vue";
 import usePlaylistStore from "@/stores/playlistStore"; // Import the store
 import { Song } from "@/types/Song"; // Import the Song type
+import PlaylistButtonComponent from "@/components/PlaylistButtonComponent.vue";
 
 export default defineComponent({
   name: "SongItem",
+  components: {
+    PlaylistButtonComponent,
+  },
   props: {
     song: {
       type: Object as PropType<Song>,
@@ -48,6 +89,9 @@ export default defineComponent({
     },
     toggleExpand() {
       this.isExpanded = !this.isExpanded;
+      nextTick(() => {
+        this.adjustHeight();
+      });
     },
     removeSong() {
       this.isRemoving = true;
@@ -57,16 +101,34 @@ export default defineComponent({
         this.isRemoving = false;
       }, 300); // Delay to allow for fade-out animation
     },
+    adjustHeight() {
+      const songLists = this.$refs.songLists as HTMLElement;
+      if (this.isExpanded) {
+        songLists.style.maxHeight = `${songLists.scrollHeight}px`;
+      } else {
+        songLists.style.maxHeight = `${songLists.firstElementChild!.scrollHeight}px`;
+      }
+    },
   },
   computed: {
-    displayedArtists() {
-      return this.isExpanded ? this.song.artists : this.song.artists.slice(0, 2);
+    additionalArtists() {
+      return this.song.artists.slice(1);
     },
     formattedDuration() {
       const minutes = Math.floor(Number(this.song.duration) / 60000);
       const seconds = Math.floor((Number(this.song.duration) % 60000) / 1000);
       return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
     },
+  },
+  watch: {
+    isExpanded(newVal) {
+      nextTick(() => {
+        this.adjustHeight();
+      });
+    }
+  },
+  mounted() {
+    this.adjustHeight(); // Adjust height on component mount
   },
 });
 </script>
@@ -85,10 +147,11 @@ export default defineComponent({
   cursor: pointer;
   transition: all 0.3s ease;
   box-sizing: border-box;
+  overflow: hidden; /* Added to handle the overflow */
 }
 
 .song-item.expanded {
-  min-height: 120px;
+  min-height: 120px; /* Minimum height when expanded */
 }
 
 .song-item.fade-out {
@@ -124,8 +187,17 @@ export default defineComponent({
 
 .song-lists {
   display: flex;
+  flex-direction: column;
   justify-content: space-between;
-  width: 100%;
+  transition: max-height 0.5s ease; /* Consistent transition duration */
+  overflow: hidden;
+  max-height: 1; /* Set initial max-height to 1 to display the first item */
+}
+
+.expanded-lists {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px; /* Adjust spacing between columns */
 }
 
 .list-group {
@@ -185,6 +257,7 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   transition: box-shadow 0.3s ease;
+  margin-left: 10px;
 }
 
 .remove-button:hover {
@@ -310,12 +383,18 @@ export default defineComponent({
   }
   .song-duration {
     font-size: 0.7em;
-    margin-right: 20px; /* Adjust margin-right for smaller screens */
+    margin-right: 20px;
   }
   .remove-button {
     width: 25px;
     height: 25px;
     font-size: 1em;
+  }
+}
+
+@media (max-width: 480px) {
+  .expanded-lists {
+    flex-direction: column;
   }
 }
 </style>

@@ -37,6 +37,7 @@ const usePlaylistStore = defineStore('playlist', {
             images: new Map<number, string>(Object.entries(song.images).map(([key, value]) => [Number(key), value as string])),
             duration: song.duration,
             popularity: song.popularity || 0, // Ensure a default value if popularity is missing
+            albums: song.albums, // Add albums to the song object
           })),
           artists: data.artists.map((artist: any) => ({
             name: artist.name,
@@ -93,6 +94,7 @@ function initializePlaylist(data: any): Playlist {
         ...song,
         id: song.id ? song.id.toString() : '',
         images: imagesMap,
+        albums: song.albums, // Add albums to the song object
       };
     }),
     artists: data.artists.map((artist: any) => {
