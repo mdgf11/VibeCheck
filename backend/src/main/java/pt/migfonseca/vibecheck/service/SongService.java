@@ -5,11 +5,9 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -132,11 +130,11 @@ public class SongService {
 
         try {
             // Iterate through albums
-            Set<Genre> artistGenres = artist
+            List<Genre> artistGenres = artist
                 .getGenreRatings()
                 .stream()
                 .map(genreRating -> genreRating.getGenre())
-                .collect(Collectors.toSet());
+                .toList();
 
             JsonNode albumsJsonNode = spotifyTokenService.getArtistAlbums(artist.getSpotifyId());
             for (JsonNode albumJsonNode : albumsJsonNode) {
@@ -175,8 +173,8 @@ public class SongService {
                 }
 
                 // Get and create album artists
-                Set<Artist> foundArtists = new HashSet<>();
-                Set<String> newArtistIds = new HashSet<>();
+                List<Artist> foundArtists = new ArrayList<>();
+                List<String> newArtistIds = new ArrayList<>();
                 for (JsonNode artistJsonNode : albumJsonNode.get("artists")) {
                     String albumArtistName = artistJsonNode.get("name").asText();
                     Optional<Artist> albumArtist = artistRepository.findByName(albumArtistName);
@@ -188,18 +186,18 @@ public class SongService {
                     } else 
                         foundArtists.add(albumArtist.get());
                 }
-                Set<Artist> albumArtists = new HashSet<>();
+                List<Artist> albumArtists = new ArrayList<>();
                 for (JsonNode newArtistJsonNode : spotifyTokenService.getArtistsFull(newArtistIds)) {
                     albumArtists.add(addArtist(newArtistJsonNode, size, popularity, newArtists));
                 }
                 albumArtists.addAll(foundArtists);
 
                 // Get and create album tracks, and featured artists
-                Set<Song> albumSongs = new HashSet<>();
-                Set<Artist> featuredArtists = new HashSet<>();
+                List<Song> albumSongs = new ArrayList<>();
+                List<Artist> featuredArtists = new ArrayList<>();
 
                 String albumName = albumJsonNode.get("name").asText();
-                Set<Genre> genres = new HashSet<>(artistGenres); // Initialize with artist's genres
+                List<Genre> genres = new ArrayList<>(artistGenres); // Initialize with artist's genres
                 for (JsonNode genre: albumJsonNode.get("genres")) {
                     Optional<Genre> genreOptional = genreRepository.findByName(genre.asText());
                     if (!genreOptional.isPresent()) {
@@ -260,10 +258,10 @@ public class SongService {
 
     @Transactional
     private void trackAndFeatures(JsonNode albumJsonNode,
-            Set<Song> albumSongs,
-            Set<Artist> albumArtists,
-            Set<Artist> featuredArtists,
-            Set<Genre> genres,
+            List<Song> albumSongs,
+            List<Artist> albumArtists,
+            List<Artist> featuredArtists,
+            List<Genre> genres,
             LocalDate releaseDate,
             int size,
             int popularity,
@@ -274,7 +272,7 @@ public class SongService {
 
         for (JsonNode trackNode : tracksNode) {
             List<Artist> foundArtists = new LinkedList<>();
-            Set<String> newArtistIds = new HashSet<>();
+            List<String> newArtistIds = new ArrayList<>();
             for (JsonNode artistJsonNode : trackNode.get("artists")) {
                 Optional<Artist> trackArtist = artistRepository.findByName(artistJsonNode.get("name").asText());
                 if (!trackArtist.isPresent()) {
@@ -287,7 +285,7 @@ public class SongService {
                 }
             }
 
-            Set<Artist> trackArtists = new HashSet<>();
+            List<Artist> trackArtists = new ArrayList<>();
             for (JsonNode newArtistJsonNode : spotifyTokenService.getArtistsFull(newArtistIds)) {
                 trackArtists.add(addArtist(newArtistJsonNode, size, popularity, newArtists));
             }
@@ -316,8 +314,12 @@ public class SongService {
                 System.out.println("Saving song: " + trackName);
                 List<Image> images = getImages(albumJsonNode.get("images"));
                 int newPopularity = trackNode.get("popularity").asInt();
-                if (newPopularity == 0)
+                if (newPopularity == 0) {
                     newPopularity = albumJsonNode.get("popularity").asInt();
+                    if (popularity == 0) {
+                        newPopularity = albumArtists.get(0).getPopularity();
+                    }
+                }
                 long duration = trackNode.get("duration_ms").asLong();
                 newSong = Optional.of(new Song(trackName, 
                         trackArtists.stream().toList(),

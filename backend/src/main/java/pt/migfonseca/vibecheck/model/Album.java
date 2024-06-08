@@ -17,6 +17,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import pt.migfonseca.vibecheck.dto.AlbumDTO;
 import pt.migfonseca.vibecheck.dto.SearchResponseDTO;
+import pt.migfonseca.vibecheck.model.ratings.GenreRating;
+import pt.migfonseca.vibecheck.model.ratings.VibeRating;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
@@ -74,23 +76,26 @@ public class Album extends RaterEntity{
         newAlbumDTO.setArtists(this.artists
             .stream()
             .map(artist -> artist.getName())
-            .collect(Collectors.toSet()));
+            .toList());
         newAlbumDTO.setSongs(this.songs
             .stream()
             .map(song -> song.getSongName())
-            .collect(Collectors.toSet()));
+            .toList());
         newAlbumDTO.setFeatures(this.features
             .stream()
             .map(feature -> feature.getName())
-            .collect(Collectors.toSet()));
+            .toList());
         newAlbumDTO.setGenres(this.genreRatings
-            .stream()
-            .map(genreRating -> genreRating.getGenre().getName())
-            .collect(Collectors.toSet()));
+                .stream()
+                .collect(Collectors.toMap(
+                    genreRating -> genreRating.getGenre().getName(),
+                    GenreRating::getRating)));
+        
         newAlbumDTO.setVibes(this.vibeRatings
             .stream()
-            .map(genreRating -> genreRating.getVibe().getName())
-            .collect(Collectors.toSet()));
+            .collect(Collectors.toMap(
+                vibeRating -> vibeRating.getVibe().getName(),
+                VibeRating::getRating)));
         newAlbumDTO.setImages(images.stream()
                 .collect(Collectors.toMap(
                         Image::getHeight,

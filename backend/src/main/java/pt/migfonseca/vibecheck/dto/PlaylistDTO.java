@@ -1,6 +1,7 @@
 package pt.migfonseca.vibecheck.dto;
 
-import java.util.Set;
+import java.util.List;
+import java.util.Map;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -10,8 +11,8 @@ import lombok.NoArgsConstructor;
 public class PlaylistDTO {
     private long id;
     private String name;
-    private Set<ArtistDTO> artists;
-    private Set<SongDTO> songs;
-    private Set<String> genres;
-    private Set<String> vibes;
+    private List<ArtistDTO> artists;
+    private List<SongDTO> songs;
+    private Map<String, Double> genres;
+    private Map<String, Double> vibes;
 }

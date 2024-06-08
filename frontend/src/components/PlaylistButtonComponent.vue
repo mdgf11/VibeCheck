@@ -90,4 +90,18 @@ export default defineComponent({
 .playlist-button:hover {
   opacity: 0.8;
 }
+
+@media (max-width: 768px) {
+  .playlist-button {
+    padding: 4px 8px;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .playlist-button {
+    padding: 3px 6px;
+    font-size: 8px;
+  }
+}
 </style>

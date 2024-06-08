@@ -14,6 +14,8 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import pt.migfonseca.vibecheck.dto.PlaylistDTO;
 import pt.migfonseca.vibecheck.dto.SearchResponseDTO;
+import pt.migfonseca.vibecheck.model.ratings.GenreRating;
+import pt.migfonseca.vibecheck.model.ratings.VibeRating;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
@@ -71,19 +73,22 @@ public class Playlist extends RaterEntity{
         playlistDTO.setArtists(artists
                 .stream()
                 .map(artist->artist.toDTO())
-                .collect(Collectors.toSet()));
+                .toList());
         playlistDTO.setSongs(songs
                 .stream()
                 .map(song -> song.toDTO())
-                .collect(Collectors.toSet()));
+                .toList());
         playlistDTO.setGenres(this.genreRatings
                 .stream()
-                .map(genreRating -> genreRating.getGenre().getName())
-                .collect(Collectors.toSet()));
+                .collect(Collectors.toMap(
+                    genreRating -> genreRating.getGenre().getName(),
+                    GenreRating::getRating)));
+        
         playlistDTO.setVibes(this.vibeRatings
-                .stream()
-                .map(genreRating -> genreRating.getVibe().getName())
-                .collect(Collectors.toSet()));
+            .stream()
+            .collect(Collectors.toMap(
+                vibeRating -> vibeRating.getVibe().getName(),
+                VibeRating::getRating)));
         return playlistDTO;
     }
 

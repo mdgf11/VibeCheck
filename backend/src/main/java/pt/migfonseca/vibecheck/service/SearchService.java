@@ -1,6 +1,7 @@
 package pt.migfonseca.vibecheck.service;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -41,33 +42,38 @@ public class SearchService {
 
         // Search for artists
         List<Artist> artists = artistRepository.findByNameContainingIgnoreCase(query);
-        for (Artist artist : artists) {
-            results.add(artist.toResponseDTO());
-        }
+        results.addAll(artists
+                .stream()
+                .limit(20)
+                .sorted(Comparator.comparing(Artist::getPopularity).reversed())
+                .map(artist -> artist.toResponseDTO())
+                .toList());
 
         // Search for albums
         List<Album> albums = albumRepository.findByAlbumNameContainingIgnoreCase(query);
-        for (Album album : albums) {
-            results.add(album.toResponseDTO());
-        }
+        results.addAll(albums
+                .stream()
+                .limit(20)
+                .sorted(Comparator.comparing(Album::getPopularity).reversed())
+                .map(album -> album.toResponseDTO())
+                .toList());
 
         // Search for songs
         List<Song> songs = songRepository.findBySongNameContainingIgnoreCase(query);
-        for (Song song : songs) {
-            results.add(song.toResponseDTO());
-        }
+        results.addAll(songs
+        .stream()
+                .limit(20)
+                .sorted(Comparator.comparing(Song::getPopularity).reversed())
+                .map(song -> song.toResponseDTO())
+                .toList());
 
         // Search for vibes
         List<Vibe> vibes = vibeRepository.findByNameContainingIgnoreCase(query);
-        for (Vibe vibe : vibes) {
-            results.add(vibe.toResponseDTO());
-        }
+        results.addAll(vibes.stream().map(vibe -> vibe.toResponseDTO()).limit(20).toList());
 
         // Search for genres
         List<Genre> genres = genreRepository.findByNameContainingIgnoreCase(query);
-        for (Genre genre : genres) {
-            results.add(genre.toResponseDTO());
-        }
+        results.addAll(genres.stream().map(genre -> genre.toResponseDTO()).limit(20).toList());
 
         return results;
     }

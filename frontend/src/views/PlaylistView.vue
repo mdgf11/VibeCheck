@@ -92,7 +92,7 @@ export default defineComponent({
           artists.add(artist);
         });
       });
-      return Array.from(artists).slice(0, 5);
+      return Array.from(artists).slice(0, 3);
     };
 
     const getTopGenres = () => {
@@ -103,7 +103,7 @@ export default defineComponent({
           genres.add(genre);
         });
       });
-      return Array.from(genres).slice(0, 5);
+      return Array.from(genres).slice(0, 3);
     };
 
     const getTopVibes = () => {
@@ -114,7 +114,7 @@ export default defineComponent({
           vibes.add(vibe);
         });
       });
-      return Array.from(vibes).slice(0, 5);
+      return Array.from(vibes).slice(0, 3);
     };
 
     return {

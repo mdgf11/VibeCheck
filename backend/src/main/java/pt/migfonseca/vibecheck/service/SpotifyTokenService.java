@@ -11,10 +11,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -119,11 +117,11 @@ public class SpotifyTokenService {
         return sendRequest("https://api.spotify.com/v1/artists/" + artistSpotifyId, "GET", headers, null);
     }
 
-    public Set<JsonNode> getArtistsFull(Set<String> artistSpotifyIds) throws IOException {
+    public List<JsonNode> getArtistsFull(List<String> artistSpotifyIds) throws IOException {
         if (invalidToken()) generateToken();
         Map<String, String> headers = new HashMap<>();
         headers.put("Authorization", "Bearer " + accessToken);
-        Set<JsonNode> artistJsonNodes = new HashSet<>();
+        List<JsonNode> artistJsonNodes = new ArrayList<>();
 
         if (artistSpotifyIds.isEmpty()) return artistJsonNodes;
         String artistIdsParam = String.join(",", artistSpotifyIds);

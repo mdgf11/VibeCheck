@@ -16,6 +16,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import pt.migfonseca.vibecheck.dto.SearchResponseDTO;
 import pt.migfonseca.vibecheck.dto.SongDTO;
+import pt.migfonseca.vibecheck.model.ratings.GenreRating;
+import pt.migfonseca.vibecheck.model.ratings.VibeRating;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
@@ -68,19 +70,22 @@ public class Song extends RaterEntity{
         newSongDTO.setArtists(this.artists
             .stream()
             .map(artist -> artist.getName())
-            .collect(Collectors.toSet()));
+            .toList());
         newSongDTO.setAlbums(this.albums
             .stream()
             .map(album -> album.getAlbumName())
-            .collect(Collectors.toSet()));
+            .toList());
         newSongDTO.setGenres(this.genreRatings
-            .stream()
-            .map(genreRating -> genreRating.getGenre().getName())
-            .collect(Collectors.toSet()));
+                .stream()
+                .collect(Collectors.toMap(
+                    genreRating -> genreRating.getGenre().getName(),
+                    GenreRating::getRating)));
+        
         newSongDTO.setVibes(this.vibeRatings
             .stream()
-            .map(vibeRating -> vibeRating.getVibe().getName())
-            .collect(Collectors.toSet()));
+            .collect(Collectors.toMap(
+                vibeRating -> vibeRating.getVibe().getName(),
+                VibeRating::getRating)));
         newSongDTO.setDate(this.date);
         newSongDTO.setDuration(duration);
         newSongDTO.setImages(images.stream()

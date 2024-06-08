@@ -18,6 +18,8 @@ import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import pt.migfonseca.vibecheck.dto.ArtistDTO;
 import pt.migfonseca.vibecheck.dto.SearchResponseDTO;
+import pt.migfonseca.vibecheck.model.ratings.GenreRating;
+import pt.migfonseca.vibecheck.model.ratings.VibeRating;
 
 @Data
 @EqualsAndHashCode(callSuper=false)
@@ -84,31 +86,42 @@ public class Artist extends RaterEntity {
     public ArtistDTO toDTO() {
         ArtistDTO newArtistDTO = new ArtistDTO();
         newArtistDTO.setName(this.name);
+        
         newArtistDTO.setAlbums(this.albums
             .stream()
             .map(album -> album.getAlbumName())
-            .collect(Collectors.toSet()));
+            .collect(Collectors.toList()));
+        
         newArtistDTO.setFeatures(this.features
             .stream()
             .map(feature -> feature.getAlbumName())
-            .collect(Collectors.toSet()));
+            .collect(Collectors.toList()));
+        
         newArtistDTO.setSongs(this.getSongs()
             .stream()
             .map(song -> song.getSongName())
-            .collect(Collectors.toSet()));
+            .collect(Collectors.toList()));
+        
         newArtistDTO.setGenres(this.genreRatings
-            .stream()
-            .map(genreRating -> genreRating.getGenre().getName())
-            .collect(Collectors.toSet()));
+                .stream()
+                .collect(Collectors.toMap(
+                    genreRating -> genreRating.getGenre().getName(),
+                    GenreRating::getRating)));
+        
         newArtistDTO.setVibes(this.vibeRatings
             .stream()
-            .map(genreRating -> genreRating.getVibe().getName())
-            .collect(Collectors.toSet()));
-        newArtistDTO.setSpotifyId(spotifyId);
-        newArtistDTO.setImages(images.stream()
-                .collect(Collectors.toMap(
-                        Image::getHeight,
-                        Image::getUrl)));
+            .collect(Collectors.toMap(
+                vibeRating -> vibeRating.getVibe().getName(),
+                VibeRating::getRating)));
+        
+        newArtistDTO.setSpotifyId(this.spotifyId);
+        
+        newArtistDTO.setImages(this.images
+            .stream()
+            .collect(Collectors.toMap(
+                Image::getHeight,
+                Image::getUrl)));
+        
         return newArtistDTO;
     }
 

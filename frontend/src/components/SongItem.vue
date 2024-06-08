@@ -24,7 +24,7 @@
                 </li>
               </ul>
             </div>
-            <div class="list-group">
+            <div class="list-group genres">
               <span class="list-title">Genres:</span>
               <ul>
                 <li v-for="(genre, index) in song.genres" :key="index">
@@ -204,6 +204,10 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+}
+
+.list-group.genres {
+  margin-left: 20px; /* Add gap between the biggest artist name and genres */
 }
 
 .list-title {

@@ -75,6 +75,7 @@ export default defineComponent({
   border-radius: 5px;
   background-color: rgba(202, 203, 207, 0.2);
   transition: background-color 0.3s, color 0.3s;
+  font-weight: bold;
 }
 
 .nav-tab:hover {
