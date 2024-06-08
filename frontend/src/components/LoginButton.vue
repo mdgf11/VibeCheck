@@ -206,4 +206,30 @@ export default defineComponent({
   font-size: 20px; /* Match font-size with nav-tab */
   line-height: 1; /* Ensure line-height is consistent */
 }
+
+/* Media Queries for Small Screens */
+@media (max-width: 600px) {
+  .actual-button .login-logo {
+    width: 24px;
+    height: 24px;
+  }
+
+  .hamburger {
+    width: 20px;
+    height: 20px;
+  }
+
+  .line {
+    height: 2.5px;
+  }
+
+  .login-button .actual-button {
+    font-size: 16px;
+    padding: 8px 10px;
+  }
+
+  .actual-button .button-text {
+    font-size: 16px;
+  }
+}
 </style>

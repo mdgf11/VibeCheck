@@ -2,11 +2,11 @@ export interface Song {
   id: string;
   name: string;
   artists: string[];
-  date: number;
-  genres: string[];
-  vibes: string[];
+  albums: string[];
+  genres: Map<string, number>;
+  vibes: Map<string, number>;
   images: Map<number,string>;
   duration: string;
   popularity: number;
-  albums: string[];
+  date: number;
 }

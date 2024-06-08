@@ -13,7 +13,7 @@
             <PlaylistButtonComponent 
               v-for="(artist, index) in getTopArtists()" 
               :key="'artist' + index" 
-              :text="artist" 
+              :text="artist.name" 
               queryType="artist" 
             />
           </div>
@@ -86,35 +86,17 @@ export default defineComponent({
 
     const getTopArtists = () => {
       if (!playlist.value) return [];
-      const artists = new Set<string>();
-      playlist.value.songs.forEach(song => {
-        song.artists.forEach(artist => {
-          artists.add(artist);
-        });
-      });
-      return Array.from(artists).slice(0, 3);
+      return Array.from(playlist.value.artists).slice(0, 3);
     };
 
     const getTopGenres = () => {
       if (!playlist.value) return [];
-      const genres = new Set<string>();
-      playlist.value.songs.forEach(song => {
-        song.genres.forEach(genre => {
-          genres.add(genre);
-        });
-      });
-      return Array.from(genres).slice(0, 3);
+      return Array.from(playlist.value.genres).slice(0, 3);
     };
 
     const getTopVibes = () => {
       if (!playlist.value) return [];
-      const vibes = new Set<string>();
-      playlist.value.songs.forEach(song => {
-        song.vibes.forEach(vibe => {
-          vibes.add(vibe);
-        });
-      });
-      return Array.from(vibes).slice(0, 3);
+      return Array.from(playlist.value.vibes).slice(0, 3);
     };
 
     return {

@@ -4,7 +4,7 @@
     :style="buttonStyle"
     @click="generatePlaylist"
   >
-    {{ text }}
+    {{ displayText }}
   </button>
 </template>
 
@@ -42,7 +42,7 @@ export default defineComponent({
   name: "PlaylistButtonComponent",
   props: {
     text: {
-      type: String,
+      type: [String, Array] as PropType<string | [string, number]>,
       required: true
     },
     queryType: {
@@ -54,11 +54,16 @@ export default defineComponent({
     const playlistStore = usePlaylistStore();
 
     const generatePlaylist = () => {
-      playlistStore.fetchAndCreatePlaylist(props.text, props.queryType);
+      playlistStore.fetchAndCreatePlaylist(
+        typeof props.text === 'string' ? props.text : props.text[0],
+        props.queryType
+      );
     };
 
     const buttonStyle = computed(() => {
-      const seed = hashStringToColorSeed(props.text);
+      const seed = hashStringToColorSeed(
+        typeof props.text === 'string' ? props.text : props.text[0]
+      );
       const baseColor = generateColor(seed);
       const color1 = `rgb(${baseColor.r}, ${baseColor.g}, ${baseColor.b})`;
       const color2 = adjustColor(baseColor, seed, 100); // Adjust color within a small variation using seed
@@ -67,9 +72,17 @@ export default defineComponent({
       };
     });
 
+    const displayText = computed(() => {
+      if (Array.isArray(props.text)) {
+        return `${props.text[0]} ${props.text[1]}/10`;
+      }
+      return props.text;
+    });
+
     return {
       generatePlaylist,
-      buttonStyle
+      buttonStyle,
+      displayText
     };
   }
 });
@@ -94,14 +107,14 @@ export default defineComponent({
 @media (max-width: 768px) {
   .playlist-button {
     padding: 4px 8px;
-    font-size: 10px;
+    font-size: 11px;
   }
 }
 
 @media (max-width: 480px) {
   .playlist-button {
     padding: 3px 6px;
-    font-size: 8px;
+    font-size: 9px;
   }
 }
 </style>

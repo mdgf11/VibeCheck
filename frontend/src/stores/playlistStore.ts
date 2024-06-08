@@ -32,20 +32,22 @@ const usePlaylistStore = defineStore('playlist', {
             name: song.name,
             artists: song.artists,
             date: song.date,
-            genres: song.genres,
-            vibes: song.vibes,
+            genres: new Map<string, number>(Object.entries(song.genres).map(([key, value]) => [key, Number(value)])),
+            vibes: new Map<string, number>(Object.entries(song.vibes).map(([key, value]) => [key, Number(value)])),
             images: new Map<number, string>(Object.entries(song.images).map(([key, value]) => [Number(key), value as string])),
             duration: song.duration,
-            popularity: song.popularity || 0, // Ensure a default value if popularity is missing
-            albums: song.albums, // Add albums to the song object
+            popularity: song.popularity || 0,
+            albums: song.albums,
           })),
           artists: data.artists.map((artist: any) => ({
             name: artist.name,
-            genres: artist.genres,
-            vibes: artist.vibes,
-            popularity: artist.popularity || 0, // Ensure a default value if popularity is missing
+            genres: new Map<string, number>(Object.entries(artist.genres).map(([key, value]) => [key, Number(value)])),
+            vibes: new Map<string, number>(Object.entries(artist.vibes).map(([key, value]) => [key, Number(value)])),
+            popularity: artist.popularity || 0,
             images: new Map<number, string>(Object.entries(artist.images).map(([key, value]) => [Number(key), value as string])),
           })),
+          genres: new Map<string, number>(Object.entries(data.genres).map(([key, value]) => [key, Number(value)])),
+          vibes: new Map<string, number>(Object.entries(data.vibes).map(([key, value]) => [key, Number(value)])),
         };
 
         // Set the playlist
@@ -74,12 +76,18 @@ function convertPlaylistToPlainObject(playlist: Playlist) {
     ...playlist,
     songs: playlist.songs.map((song) => ({
       ...song,
+      genres: Object.fromEntries(song.genres),
+      vibes: Object.fromEntries(song.vibes),
       images: Object.fromEntries(song.images),
     })),
     artists: playlist.artists.map((artist) => ({
       ...artist,
+      genres: Object.fromEntries(artist.genres),
+      vibes: Object.fromEntries(artist.vibes),
       images: Object.fromEntries(artist.images),
     })),
+    genres: Object.fromEntries(playlist.genres),
+    vibes: Object.fromEntries(playlist.vibes),
   };
 }
 
@@ -87,25 +95,47 @@ function initializePlaylist(data: any): Playlist {
   return {
     ...data,
     songs: data.songs.map((song: any) => {
+      const genresMap = new Map<string, number>(
+        Object.entries(song.genres).map(([key, value]) => [key, Number(value)])
+      );
+      const vibesMap = new Map<string, number>(
+        Object.entries(song.vibes).map(([key, value]) => [key, Number(value)])
+      );
       const imagesMap = new Map<number, string>(
         Object.entries(song.images).map(([key, value]) => [Number(key), value as string])
       );
       return {
         ...song,
         id: song.id ? song.id.toString() : '',
+        genres: genresMap,
+        vibes: vibesMap,
         images: imagesMap,
-        albums: song.albums, // Add albums to the song object
+        albums: song.albums,
       };
     }),
     artists: data.artists.map((artist: any) => {
+      const genresMap = new Map<string, number>(
+        Object.entries(artist.genres).map(([key, value]) => [key, Number(value)])
+      );
+      const vibesMap = new Map<string, number>(
+        Object.entries(artist.vibes).map(([key, value]) => [key, Number(value)])
+      );
       const imagesMap = new Map<number, string>(
         Object.entries(artist.images).map(([key, value]) => [Number(key), value as string])
       );
       return {
         ...artist,
+        genres: genresMap,
+        vibes: vibesMap,
         images: imagesMap,
       };
     }),
+    genres: new Map<string, number>(
+      Object.entries(data.genres).map(([key, value]) => [key, Number(value)])
+    ),
+    vibes: new Map<string, number>(
+      Object.entries(data.vibes).map(([key, value]) => [key, Number(value)])
+    ),
   };
 }
 

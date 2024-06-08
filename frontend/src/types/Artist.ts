@@ -1,7 +1,7 @@
 export interface Artist {
     name: string;
-    genres: string[];
-    vibes: string[];
+    genres: Map<string, number>;
+    vibes: Map<string, number>;
     popularity: number;
     images: Map<number,string>;
 }

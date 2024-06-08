@@ -5,7 +5,7 @@
       v-model="message" 
       :placeholder="defaultSearch" 
       @input="handleInput" 
-      @keyup="handleInput" 
+      @keyup="handleKeyUp" 
     >
     <transition
       name="box"
@@ -74,6 +74,14 @@ export default defineComponent({
     const handleInput = () => {
       clearTimeout(timeout);
       timeout = setTimeout(search, 200);
+    };
+
+    const handleKeyUp = (event: KeyboardEvent) => {
+      if (event.key === "Enter" && searchResults.value.length > 0) {
+        selectSuggestion(searchResults.value[0]);
+      } else {
+        search();
+      }
     };
 
     const search = async () => {
@@ -165,12 +173,11 @@ export default defineComponent({
     const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
     return {
-      message, defaultSearch, handleInput, search, searchResults, groupedResults, filteredGroupedResults, visibleResults, filteredVisibleResults, selectSuggestion, toggleCategory, expandedCategories, shouldShowSuggestions, shouldShowArrow, beforeEnter, enter, afterEnter, beforeLeave, leave, afterLeave, capitalize, suggestionsBox
+      message, defaultSearch, handleInput, handleKeyUp, search, searchResults, groupedResults, filteredGroupedResults, visibleResults, filteredVisibleResults, selectSuggestion, toggleCategory, expandedCategories, shouldShowSuggestions, shouldShowArrow, beforeEnter, enter, afterEnter, beforeLeave, leave, afterLeave, capitalize, suggestionsBox
     };
   }
 });
 </script>
-
 
 <style scoped>
 body {
@@ -360,4 +367,3 @@ input:hover {
 }
 
 </style>
-

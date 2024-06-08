@@ -17,6 +17,7 @@
           </div>
           <div class="expanded-lists" v-if="isExpanded">
             <div class="list-group">
+              <span class="list-title">Additional Artists:</span>
               <ul>
                 <!-- Display additional artists only when expanded -->
                 <li v-for="(artist, index) in additionalArtists" :key="index">
@@ -83,33 +84,31 @@ export default defineComponent({
     };
   },
   methods: {
-    getImageUrl(images: Map<number, string>): string {
-      const url = images.get(300) || images.get(64) || images.values().next().value;
-      return url;
+        getImageUrl(images: Map<number, string>): string {
+            const url = images.get(300) || images.get(64) || images.values().next().value;
+            return url;
+        },
+        toggleExpand() {
+            this.isExpanded = !this.isExpanded;
+            nextTick(() => {
+            this.adjustHeight();
+            });
+        },
+        removeSong() {
+            this.isRemoving = true;
+            setTimeout(() => {
+            const playlistStore = usePlaylistStore();
+            playlistStore.removeSong(this.song); // Call the store action to remove the song
+            this.isRemoving = false;
+            }, 300); // Delay to allow for fade-out animation
+        },
+        adjustHeight() {
+            const songLists = this.$refs.songLists as HTMLElement;
+            const extraHeight = 10; // Extra height to ensure the first artist's category is fully visible
+            const baseHeight = this.isExpanded ? songLists.scrollHeight : songLists.firstElementChild!.scrollHeight;
+            songLists.style.maxHeight = `${baseHeight + extraHeight}px`;
+        },
     },
-    toggleExpand() {
-      this.isExpanded = !this.isExpanded;
-      nextTick(() => {
-        this.adjustHeight();
-      });
-    },
-    removeSong() {
-      this.isRemoving = true;
-      setTimeout(() => {
-        const playlistStore = usePlaylistStore();
-        playlistStore.removeSong(this.song); // Call the store action to remove the song
-        this.isRemoving = false;
-      }, 300); // Delay to allow for fade-out animation
-    },
-    adjustHeight() {
-      const songLists = this.$refs.songLists as HTMLElement;
-      if (this.isExpanded) {
-        songLists.style.maxHeight = `${songLists.scrollHeight}px`;
-      } else {
-        songLists.style.maxHeight = `${songLists.firstElementChild!.scrollHeight}px`;
-      }
-    },
-  },
   computed: {
     additionalArtists() {
       return this.song.artists.slice(1);
@@ -136,7 +135,7 @@ export default defineComponent({
 <style scoped>
 .song-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start; /* Align items to the start */
   background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
   padding: 10px;
@@ -174,7 +173,6 @@ export default defineComponent({
 .song-details {
   display: flex;
   justify-content: space-between;
-  align-items: center;
   width: calc(100% - 70px);
 }
 
@@ -195,19 +193,18 @@ export default defineComponent({
 }
 
 .expanded-lists {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px; /* Adjust spacing between columns */
+  display: grid;
+  gap: 0; /* Remove spacing between columns */
 }
 
 .list-group {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-}
-
-.list-group.genres {
-  margin-left: 20px; /* Add gap between the biggest artist name and genres */
+  border: 1px solid rgba(255, 255, 255, 0.3); /* Added border */
+  padding: 5px; /* Padding inside the border */
+  border-radius: 10px; /* Rounded corners */
+  height: 100%; /* Ensure each category fills the height */
 }
 
 .list-title {
@@ -240,12 +237,15 @@ export default defineComponent({
 .song-duration {
   font-size: 0.8em;
   color: #ccc;
-  margin-right: 50px; /* Increased margin for spacing */
+  margin-top: 2px; /* Adjust margin to position below the title */
 }
 
 .song-actions {
   display: flex;
-  align-items: center;
+  flex-direction: column; /* Change to column layout */
+  align-items: flex-end;
+  justify-content: flex-start; /* Align to the start */
+  margin-left: auto; /* Push to the right */
 }
 
 .remove-button {
@@ -261,7 +261,7 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   transition: box-shadow 0.3s ease;
-  margin-left: 10px;
+  margin-top: 5px; /* Add margin to separate from duration */
 }
 
 .remove-button:hover {
@@ -269,136 +269,98 @@ export default defineComponent({
 }
 
 /* Media Queries */
-@media (max-width: 1200px) {
+@media (min-width: 1600px) {
+  .song-item {
+    width: 1200px;
+  }
+  .expanded-lists {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  }
+}
+
+@media (min-width: 1400px) and (max-width: 1599px) {
+  .song-item {
+    width: 1100px;
+  }
+  .expanded-lists {
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  }
+}
+
+@media (min-width: 1200px) and (max-width: 1399px) {
+  .song-item {
+    width: 1000px;
+  }
+  .expanded-lists {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  }
+}
+
+@media (min-width: 1000px) and (max-width: 1199px) {
+  .song-item {
+    width: 900px;
+  }
+  .expanded-lists {
+    grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  }
+}
+
+@media (min-width: 800px) and (max-width: 999px) {
   .song-item {
     width: 700px;
   }
-  .song-details {
-    flex-direction: row;
-    align-items: center;
-  }
-  .song-info {
-    width: 70%;
-  }
-  .song-actions {
-    width: 30%;
-    justify-content: flex-end;
+  .expanded-lists {
+    grid-template-columns: repeat(auto-fit, minmax(90px, 1fr));
   }
 }
 
-@media (max-width: 1024px) {
-  .song-item {
-    width: 600px;
-  }
-  .song-details {
-    flex-direction: row;
-    align-items: center;
-  }
-  .song-info {
-    width: 70%;
-  }
-  .song-actions {
-    width: 30%;
-    justify-content: flex-end;
-  }
-}
-
-@media (max-width: 900px) {
-  .song-item {
-    width: 550px;
-  }
-  .song-details {
-    flex-direction: row;
-    align-items: center;
-  }
-  .song-info {
-    width: 70%;
-  }
-  .song-actions {
-    width: 30%;
-    justify-content: flex-end;
-  }
-}
-
-@media (max-width: 768px) {
+@media (min-width: 600px) and (max-width: 799px) {
   .song-item {
     width: 500px;
   }
-  .song-details {
-    flex-direction: row;
-    align-items: center;
-  }
-  .song-info {
-    width: 70%;
-  }
-  .song-actions {
-    width: 30%;
-    justify-content: flex-end;
-  }
-  .song-image {
-    height: 50px;
-    width: 50px;
-    margin-right: 10px;
-  }
-  .song-details h3 {
-    font-size: 0.9em;
+  .expanded-lists {
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
   }
 }
 
-@media (max-width: 600px) {
-  .song-item {
-    width: 400px;
-  }
-  .song-details {
-    flex-direction: row;
-    align-items: center;
-  }
-  .song-info {
-    width: 70%;
-  }
-  .song-actions {
-    width: 30%;
-    justify-content: flex-end;
-  }
-}
-
-@media (max-width: 480px) {
+@media (max-width: 599px) {
   .song-item {
     width: 100%;
     padding: 8px;
   }
   .song-details {
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
+    justify-content: space-between;
   }
   .song-info {
-    width: 70%;
+    width: calc(100% - 70px);
   }
   .song-actions {
-    width: 30%;
-    justify-content: flex-end;
-  }
-  .song-image {
-    height: 40px;
-    width: 40px;
-  }
-  .song-details h3 {
-    font-size: 0.8em;
+    flex-direction: row;
+    align-items: center;
+    margin-left: 0;
+    margin-top: 0;
   }
   .song-duration {
     font-size: 0.7em;
-    margin-right: 20px;
+    margin-right: 10px; /* Adjust margin for alignment */
   }
   .remove-button {
     width: 25px;
     height: 25px;
     font-size: 1em;
+    margin-left: 10px; /* Adjust margin for alignment */
   }
-}
-
-@media (max-width: 480px) {
   .expanded-lists {
-    flex-direction: column;
+    grid-template-columns: 1fr;
+  }
+  .song-lists {
+    max-height: none; /* Remove max-height for small screens */
   }
 }
 </style>
+
+
+
+

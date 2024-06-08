@@ -36,4 +36,12 @@ public class VibeRating {
     private Vibe vibe;
 
     private double rating;
+
+    public VibeRating(RaterEntity raterEntity, Vibe vibe, double rating) {
+        this.vibeId = vibe.getRaterEntityId();
+        this.vibe = vibe;
+        this.raterEntity = raterEntity;
+        this.raterEntityId = raterEntity.getRaterEntityId();
+        this.rating = rating;
+    }
 }
