@@ -23,19 +23,19 @@ import pt.migfonseca.vibecheck.repo.VibeRepository;
 public class SearchService {
 
     @Autowired
-    ArtistRepository artistRepository;
+    private ArtistRepository artistRepository;
 
     @Autowired
-    AlbumRepository albumRepository;
+    private AlbumRepository albumRepository;
 
     @Autowired
-    SongRepository songRepository;
+    private SongRepository songRepository;
 
     @Autowired
-    GenreRepository genreRepository;
+    private GenreRepository genreRepository;
 
     @Autowired
-    VibeRepository vibeRepository;
+    private VibeRepository vibeRepository;
 
     public List<SearchResponseDTO> searchQuery(String query) {
         List<SearchResponseDTO> results = new ArrayList<>();

@@ -31,22 +31,22 @@ import pt.migfonseca.vibecheck.repo.VibeRepository;
 public class PlaylistService {
 
     @Autowired
-    PlaylistRepository playlistRepository;
+    private PlaylistRepository playlistRepository;
 
     @Autowired
-    ArtistRepository artistRepository;
+    private ArtistRepository artistRepository;
 
     @Autowired
-    AlbumRepository albumRepository;
+    private AlbumRepository albumRepository;
 
     @Autowired
-    SongRepository songRepository;
+    private SongRepository songRepository;
 
     @Autowired
-    GenreRepository genreRepository;
+    private GenreRepository genreRepository;
 
     @Autowired
-    VibeRepository vibeRepository;
+    private VibeRepository vibeRepository;
 
     public PlaylistDTO getPlaylist(String query, String artistString, String type) throws IOException {
         Optional<Artist> artist = artistRepository.findByName(artistString);

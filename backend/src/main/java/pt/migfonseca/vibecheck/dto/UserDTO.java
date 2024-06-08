@@ -1,16 +1,18 @@
 package pt.migfonseca.vibecheck.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
-import pt.migfonseca.vibecheck.model.User;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class UserDTO {
-     public UserDTO(User user) {
-        this.name = user.getUsername();
-        this.score = user.getScore();
-    }
 
-    private String name;
+    private long id;
+    private String email;
+    private String username;
+    private String spotifyId;
     private int score;
 
 }

@@ -1,5 +1,7 @@
 export interface Profile {
-  display_name: string | null;
+  id: string | null;
   email: string | null;
-  href: string | null;
+  display_name: string | null;
+  spotifyId: string | null;
+  images: Map<number, string>;
 }

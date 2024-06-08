@@ -1,5 +1,7 @@
 import { Profile } from '@/types/Profile';
 import { defineStore } from 'pinia';
+import axios from 'axios';
+const env = import.meta.env;
 
 // Define constants
 const SPOTIFY_CODE_KEY = 'spotifyCode';
@@ -52,14 +54,25 @@ const useUserStore = defineStore('user', {
       this.token = token;
       sessionStorage.setItem(SPOTIFY_TOKEN_KEY, token);
     },
-    login(profile: Profile) {
-      this.profile = profile;
-      if (profile) {
-        sessionStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    async login(profile: Profile) {
+      try {
+        // Send the profile data to the backend to register the user
+        const response = await axios.post(env.VITE_APP_BACKEND_URL + '/user/register', {
+          email: profile.email,
+          spotifyId: profile.id
+        });
+
+        // After successful registration, update the user store
+        this.profile = profile;
+        if (profile) {
+          sessionStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+        }
+
+        this.isLoggedIn = true;
+        sessionStorage.setItem(IS_LOGGED_IN_KEY, 'true');
+      } catch (error) {
+        console.error('Failed to register user:', error);
       }
-      
-      this.isLoggedIn = true;
-      sessionStorage.setItem(IS_LOGGED_IN_KEY, 'true');
     },
     logout() {
       this.token = null;

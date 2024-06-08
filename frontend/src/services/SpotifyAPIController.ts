@@ -87,9 +87,19 @@ async function fetchProfile(token: string): Promise<Profile> {
         method: "GET", headers: { Authorization: `Bearer ${token}` }
     });
     const userStore = useUserStore();
-    const profile: Profile = await result.json();
+    const spotifyUser = await result.json();
+
+    const profile: Profile = {
+        id: null, // Spotify API does not provide an email directly in the user object, so it is set to null
+        email: null,
+        display_name: spotifyUser.display_name || null,
+        spotifyId: spotifyUser.id || null,
+        images: new Map(spotifyUser.images.map((img: { height: number, url: string }) => [img.height, img.url]))
+    };
+
     userStore.login(profile);
     console.log(profile);
-    
+
     return profile;
 }
+

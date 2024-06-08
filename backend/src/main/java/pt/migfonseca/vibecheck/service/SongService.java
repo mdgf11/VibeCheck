@@ -35,22 +35,22 @@ import pt.migfonseca.vibecheck.repo.SongRepository;
 public class SongService {
 
     @Autowired
-    ArtistRepository artistRepository;
+    private ArtistRepository artistRepository;
 
     @Autowired
-    AlbumRepository albumRepository;
+    private AlbumRepository albumRepository;
 
     @Autowired
-    SongRepository songRepository;
+    private SongRepository songRepository;
 
     @Autowired
-    GenreRepository genreRepository;
+    private GenreRepository genreRepository;
 
     @Autowired
-    GenreRatingRepository genreRatingRepository;
+    private GenreRatingRepository genreRatingRepository;
 
     @Autowired
-    SpotifyTokenService spotifyTokenService;
+    private SpotifyTokenService spotifyTokenService;
 
     public List<ArtistDTO> getAllArtists() {
         return artistRepository
