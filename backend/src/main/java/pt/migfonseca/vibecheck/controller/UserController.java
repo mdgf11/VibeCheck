@@ -33,7 +33,6 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/user")
-@CrossOrigin(origins = "http://localhost:8081")
 public class UserController {
 
     @Value("${env.frontend.url}")
