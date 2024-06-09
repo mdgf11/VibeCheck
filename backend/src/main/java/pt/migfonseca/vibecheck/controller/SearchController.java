@@ -21,9 +21,9 @@ public class SearchController {
     SearchService service;
 
     @GetMapping
-    ResponseEntity<List<SearchResponseDTO>> search(@RequestParam("query") String query) {
-        
-        return new ResponseEntity<List<SearchResponseDTO>>(service.searchQuery(query), HttpStatus.OK);
+    ResponseEntity<List<SearchResponseDTO>> search(@RequestParam("query") String query,
+            @RequestParam(name = "type", required = false) String type ) {
+        return new ResponseEntity<List<SearchResponseDTO>>(service.searchQuery(query, type), HttpStatus.OK);
     }
 
 }

@@ -6,38 +6,57 @@
         <img :src="getCoverArtUrl(playlist.songs[0])" class="playlist-cover" />
       </div>
       <div class="playlist-info">
-        <h1 class="playlist-title">{{ playlist.title }}</h1>
+        <h1 class="playlist-title">
+          {{ playlist.title }}
+          <span class="playlist-icons">
+            <img :src="savePlaylistLogo" class="heart-icon" @click="addToAccount" />
+            <img :src="optionsLogo" class="settings-icon" @click="toggleSettings" />
+          </span>
+        </h1>
         <div class="playlist-buttons">
           <div class="playlist-artists">
             <span class="section-title">Featuring:</span>
-            <PlaylistButtonComponent 
-              v-for="(artist, index) in getTopArtists()" 
-              :key="'artist' + index" 
-              :text="artist.name" 
-              queryType="artist" 
-            />
+            <div
+              v-for="(artist, index) in getTopArtists()"
+              :key="'artist' + index"
+              @click="generatePlaylist(artist.name, 'artist')"
+            >
+              <PlaylistButtonComponent 
+                :text="artist.name"
+                queryType="artist"
+              />
+            </div>
           </div>
           <div class="playlist-genres">
             <span class="section-title">Genres:</span>
-            <PlaylistButtonComponent 
-              v-for="(genre, index) in getTopGenres()" 
-              :key="'genre' + index" 
-              :text="genre" 
-              queryType="genre" 
-            />
+            <div
+              v-for="(genre, index) in getTopGenres()"
+              :key="index"
+              @click="generatePlaylist(genre, 'genre')"
+            >
+              <PlaylistButtonComponent 
+                :text="genre"
+                queryType="genre"
+              />
+            </div>
           </div>
           <div class="playlist-vibes">
             <span class="section-title">Vibes:</span>
-            <PlaylistButtonComponent 
-              v-for="(vibe, index) in getTopVibes()" 
-              :key="'vibe' + index" 
-              :text="vibe" 
-              queryType="vibe" 
-            />
+            <div
+              v-for="(vibe, index) in getTopVibes()"
+              :key='index'
+              @click="generatePlaylist(vibe, 'vibe')"
+            >
+              <PlaylistButtonComponent 
+                :text='vibe'
+                queryType="vibe"
+              />
+            </div>
           </div>
         </div>
       </div>
     </div>
+    <PlaylistSettingsComponent v-if="settingsOpen" :settings="playlistSettings" @update-settings="updateSettings" @close-settings="toggleSettings" />
     <div class="playlist-container">
       <div v-if="playlist">
         <transition-group name="song-list" tag="div">
@@ -56,12 +75,16 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed } from "vue";
+import { defineComponent, computed, ref } from "vue";
 import usePlaylistStore from "@/stores/playlistStore";
 import HeaderComponent from "@/components/HeaderComponent.vue";
 import SongItem from "@/components/SongItem.vue";
 import PlaylistButtonComponent from "@/components/PlaylistButtonComponent.vue";
+import PlaylistSettingsComponent from "@/components/PlaylistSettingsComponent.vue";
 import { Song } from "@/types/Song";
+import { PlaylistSettings } from "@/types/PlaylistSettings";
+import optionsLogo from "@/assets/img/options-logo.png";
+import savePlaylistLogo from "@/assets/img/save-playlist-logo.png"
 
 export default defineComponent({
   name: "PlaylistView",
@@ -69,10 +92,35 @@ export default defineComponent({
     HeaderComponent,
     SongItem,
     PlaylistButtonComponent,
+    PlaylistSettingsComponent
   },
   setup() {
     const playlistStore = usePlaylistStore();
     const playlist = computed(() => playlistStore.getPlaylist);
+    const settingsOpen = ref(false);
+    const playlistSettings = ref<PlaylistSettings>({
+      numSongs: null,
+      maxDuration: null,
+      minSongsPerArtist: new Map(),
+      maxSongsPerArtist: new Map(),
+      minSongsPerGenre: new Map(),
+      maxSongsPerGenre: new Map(),
+      minSongsPerVibe: new Map(),
+      maxSongsPerVibe: new Map(),
+    });
+
+    const toggleSettings = () => {
+      settingsOpen.value = !settingsOpen.value;
+    };
+
+    const addToAccount = () => {
+      // Implement functionality to add playlist to account
+    };
+
+    const updateSettings = (newSettings: PlaylistSettings) => {
+      playlistSettings.value = newSettings;
+      // Implement functionality to apply new settings to the playlist
+    };
 
     const getCoverArtUrl = (song: Song) => {
       if (window.innerWidth <= 480) {
@@ -91,12 +139,17 @@ export default defineComponent({
 
     const getTopGenres = () => {
       if (!playlist.value) return [];
-      return Array.from(playlist.value.genres).slice(0, 3);
+      return Array.from(playlist.value.genres).sort((a, b) => b[1] - a[1]).slice(0, 3);
     };
 
     const getTopVibes = () => {
       if (!playlist.value) return [];
-      return Array.from(playlist.value.vibes).slice(0, 3);
+      return Array.from(playlist.value.vibes).sort((a, b) => b[1] - a[1]).slice(0, 3);
+    };
+
+    const generatePlaylist = (text: string | [string, number], queryType: string) => {
+      const queryText = Array.isArray(text) ? text[0] : text;
+      playlistStore.fetchAndCreatePlaylist(queryText, queryType);
     };
 
     return {
@@ -105,6 +158,14 @@ export default defineComponent({
       getTopArtists,
       getTopGenres,
       getTopVibes,
+      settingsOpen,
+      playlistSettings,
+      toggleSettings,
+      addToAccount,
+      updateSettings,
+      generatePlaylist,
+      optionsLogo,
+      savePlaylistLogo
     };
   },
 });
@@ -137,6 +198,7 @@ export default defineComponent({
   align-items: flex-start;
   justify-content: flex-start;
   margin: 20px;
+  position: relative;
 }
 
 .playlist-cover-container {
@@ -157,12 +219,27 @@ export default defineComponent({
   flex-direction: column;
   justify-content: flex-start;
   width: 60%;
-  margin-left: 20px;
+  margin-left: 5px; /* Reduced the margin-left value */
 }
 
 .playlist-title {
   font-size: 24px;
   margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.playlist-icons {
+  display: flex;
+  align-items: center;
+  margin-left: 10px;
+}
+
+.settings-icon, .heart-icon {
+  width: 24px;
+  height: 24px;
+  margin-left: 5px;
+  cursor: pointer;
 }
 
 .playlist-buttons {
@@ -173,7 +250,7 @@ export default defineComponent({
 }
 
 .section-title {
-  font-size: 10px; /* Adjusted to make the section titles smaller */
+  font-size: 10px;
   font-weight: bold;
   margin-right: 5px;
 }
@@ -222,7 +299,7 @@ export default defineComponent({
   }
   .playlist-info {
     width: 70%;
-    margin-left: 20px;
+    margin-left: 5px; /* Reduced the margin-left value */
   }
   .playlist-title {
     font-size: 22px;
@@ -242,7 +319,7 @@ export default defineComponent({
   }
   .playlist-info {
     width: 60%;
-    margin-left: 20px;
+    margin-left: 5px; /* Reduced the margin-left value */
   }
   .playlist-title {
     font-size: 20px;
@@ -262,7 +339,7 @@ export default defineComponent({
   }
   .playlist-info {
     width: 50%;
-    margin-left: 20px;
+    margin-left: 5px; /* Reduced the margin-left value */
   }
   .playlist-title {
     font-size: 18px;
@@ -287,6 +364,8 @@ export default defineComponent({
   }
   .playlist-title {
     font-size: 16px;
+    justify-content: center; /* Centering the title */
+    width: 100%;
   }
   .playlist-buttons {
     font-size: 10px;
@@ -314,6 +393,8 @@ export default defineComponent({
   }
   .playlist-title {
     font-size: 14px;
+    justify-content: center; /* Centering the title */
+    width: 100%;
   }
   .playlist-buttons {
     font-size: 8px;
@@ -341,6 +422,8 @@ export default defineComponent({
   }
   .playlist-title {
     font-size: 12px;
+    justify-content: center; /* Centering the title */
+    width: 100%;
   }
   .playlist-buttons {
     font-size: 8px;

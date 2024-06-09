@@ -7,7 +7,7 @@
       <div class="song-info">
         <h3>{{ song.name }}</h3>
         <div class="song-lists" ref="songLists">
-          <div class="list-group">
+          <div :class="['list-group', { 'first-artist': !isExpanded }]">
             <ul>
               <!-- Always display the first artist's button -->
               <li>
@@ -135,7 +135,7 @@ export default defineComponent({
 <style scoped>
 .song-item {
   display: flex;
-  align-items: flex-start; /* Align items to the start */
+  align-items: flex-start;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
   padding: 10px;
@@ -146,11 +146,11 @@ export default defineComponent({
   cursor: pointer;
   transition: all 0.3s ease;
   box-sizing: border-box;
-  overflow: hidden; /* Added to handle the overflow */
+  overflow: hidden;
 }
 
 .song-item.expanded {
-  min-height: 120px; /* Minimum height when expanded */
+  min-height: 120px;
 }
 
 .song-item.fade-out {
@@ -187,24 +187,28 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  transition: max-height 0.5s ease; /* Consistent transition duration */
+  transition: max-height 0.5s ease;
   overflow: hidden;
-  max-height: 1; /* Set initial max-height to 1 to display the first item */
+  max-height: 1;
 }
 
 .expanded-lists {
   display: grid;
-  gap: 0; /* Remove spacing between columns */
+  gap: 0;
 }
 
 .list-group {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  border: 1px solid rgba(255, 255, 255, 0.3); /* Added border */
-  padding: 5px; /* Padding inside the border */
-  border-radius: 10px; /* Rounded corners */
-  height: 100%; /* Ensure each category fills the height */
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 5px;
+  border-radius: 10px;
+  height: 100%;
+}
+
+.list-group.first-artist {
+  border: none;
 }
 
 .list-title {
@@ -237,19 +241,19 @@ export default defineComponent({
 .song-duration {
   font-size: 0.8em;
   color: #ccc;
-  margin-top: 2px; /* Adjust margin to position below the title */
+  margin-top: 2px;
 }
 
 .song-actions {
   display: flex;
-  flex-direction: column; /* Change to column layout */
+  flex-direction: column;
   align-items: flex-end;
-  justify-content: flex-start; /* Align to the start */
-  margin-left: auto; /* Push to the right */
+  justify-content: flex-start;
+  margin-left: auto;
 }
 
 .remove-button {
-  background: rgba(255, 255, 255, 0.1); /* Same background as song-item */
+  background: rgba(255, 255, 255, 0.1);
   color: white;
   border: none;
   border-radius: 50%;
@@ -261,14 +265,13 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   transition: box-shadow 0.3s ease;
-  margin-top: 5px; /* Add margin to separate from duration */
+  margin-top: 5px;
 }
 
 .remove-button:hover {
-  box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.2); /* Shadow effect on hover */
+  box-shadow: 0 0 5px 2px rgba(0, 0, 0, 0.2);
 }
 
-/* Media Queries */
 @media (min-width: 1600px) {
   .song-item {
     width: 1200px;
@@ -344,19 +347,19 @@ export default defineComponent({
   }
   .song-duration {
     font-size: 0.7em;
-    margin-right: 10px; /* Adjust margin for alignment */
+    margin-right: 10px;
   }
   .remove-button {
     width: 25px;
     height: 25px;
     font-size: 1em;
-    margin-left: 10px; /* Adjust margin for alignment */
+    margin-left: 10px;
   }
   .expanded-lists {
     grid-template-columns: 1fr;
   }
   .song-lists {
-    max-height: none; /* Remove max-height for small screens */
+    max-height: none;
   }
 }
 </style>

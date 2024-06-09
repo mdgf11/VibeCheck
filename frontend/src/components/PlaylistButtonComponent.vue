@@ -2,7 +2,6 @@
   <button
     class="playlist-button"
     :style="buttonStyle"
-    @click="generatePlaylist"
   >
     {{ displayText }}
   </button>
@@ -12,7 +11,8 @@
 import { defineComponent, PropType, computed } from "vue";
 import usePlaylistStore from "@/stores/playlistStore";
 
-function hashStringToColorSeed(str: string): number {
+function hashStringToColorSeed(input: string | [string, number]): number {
+  const str = typeof input === 'string' ? input : input[0];
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash = str.charCodeAt(i) + ((hash << 5) - hash);
@@ -53,13 +53,6 @@ export default defineComponent({
   setup(props) {
     const playlistStore = usePlaylistStore();
 
-    const generatePlaylist = () => {
-      playlistStore.fetchAndCreatePlaylist(
-        typeof props.text === 'string' ? props.text : props.text[0],
-        props.queryType
-      );
-    };
-
     const buttonStyle = computed(() => {
       const seed = hashStringToColorSeed(
         typeof props.text === 'string' ? props.text : props.text[0]
@@ -80,7 +73,6 @@ export default defineComponent({
     });
 
     return {
-      generatePlaylist,
       buttonStyle,
       displayText
     };
