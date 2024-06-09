@@ -1,6 +1,9 @@
 package pt.migfonseca.vibecheck.service;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -24,13 +27,20 @@ public class UserService implements UserDetailsService {
     private UserRepository userRepository;
 
     @Autowired
+    @Lazy
     private PasswordEncoder passwordEncoder;
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         Optional<User> user = userRepository.findByEmail(email);
         if (user.isPresent()) {
-            return new org.springframework.security.core.userdetails.User(user.get().getEmail(), user.get().getPassword(), new ArrayList<>());
+            User foundUser = user.get();
+            // Add authorities based on the admin field
+            List<GrantedAuthority> authorities = new ArrayList<>();
+            if (foundUser.isAdmin()) {
+                authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
+            }
+            return new org.springframework.security.core.userdetails.User(foundUser.getEmail(), foundUser.getPassword(), authorities);
         }
         throw new UsernameNotFoundException("User not found with email: " + email);
     }
@@ -67,7 +77,7 @@ public class UserService implements UserDetailsService {
         if (userOptional.isPresent()) {
             return userOptional.get();
         } else {
-            User user = new User(spotifyUser);
+            User user = new User(spotifyUser, passwordEncoder.encode("password"));
             user = userRepository.save(user);
             return user;
         }
@@ -78,7 +88,7 @@ public class UserService implements UserDetailsService {
         if (userOptional.isPresent()) {
             return userOptional.get();
         } else {
-            User user = new User(email, username, password);
+            User user = new User(email, username, passwordEncoder.encode(password));
             user = userRepository.save(user);
             return user;
         }
@@ -90,8 +100,9 @@ public class UserService implements UserDetailsService {
             if (passwordEncoder.matches(password, userOptional.get().getPassword()))
                 return userOptional.get();
             else
-                throw new FailedLoginException();
-        }else
+                throw new FailedLoginException("");
+        } else {
             throw new UsernameNotFoundException(email);
+        }
     }
 }

@@ -1,5 +1,9 @@
 package pt.migfonseca.vibecheck.controller;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.security.auth.login.FailedLoginException;
@@ -16,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import pt.migfonseca.vibecheck.dto.UserDTO;
 import pt.migfonseca.vibecheck.service.UserService;
 import pt.migfonseca.vibecheck.util.JwtUtil;
 import se.michaelthelin.spotify.SpotifyApi;
@@ -28,6 +33,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @RestController
 @RequestMapping("/user")
+@CrossOrigin(origins = "http://localhost:8081")
 public class UserController {
 
     @Value("${env.frontend.url}")
@@ -48,21 +54,33 @@ public class UserController {
     @Autowired
     private JwtUtil jwtUtil;
 
-    @CrossOrigin(origins = "http://localhost:8081")
     @PostMapping("/register")
-    public ResponseEntity<String> register(@RequestBody Map<String, String> body) {
+    public ResponseEntity<Map<String, Object>> register(@RequestBody Map<String, String> body) {
         String email = body.get("email");
         String username = body.get("username");
         String password = body.get("password");
-        return new ResponseEntity<>(jwtUtil.generateToken(userService.registerOrGetUser(email, username, password).toUserDetails()), HttpStatus.ACCEPTED);
+        pt.migfonseca.vibecheck.model.User registeredUser = userService.registerOrGetUser(email, username, password);
+        String token = jwtUtil.generateToken(registeredUser.toUserDetails());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", token);
+        response.put("user", registeredUser.toDTO());
+
+        return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
     }
-    
-    @CrossOrigin(origins = "http://localhost:8081")
+
     @PostMapping("/login")
-    public ResponseEntity<String> login(@RequestBody Map<String, String> body) throws FailedLoginException {
+    public ResponseEntity<Map<String, Object>> login(@RequestBody Map<String, String> body) throws FailedLoginException {
         String email = body.get("email");
         String password = body.get("password");
-        return new ResponseEntity<>(jwtUtil.generateToken(userService.login(email, password).toUserDetails()), HttpStatus.ACCEPTED);
+        pt.migfonseca.vibecheck.model.User loggedInUser = userService.login(email, password);
+        String token = jwtUtil.generateToken(loggedInUser.toUserDetails());
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("token", token);
+        response.put("user", loggedInUser.toDTO());
+
+        return new ResponseEntity<>(response, HttpStatus.ACCEPTED);
     }
     
     @GetMapping("/callback")
@@ -73,7 +91,7 @@ public class UserController {
                 .setClientSecret(SPOTIFY_SECRET)
                 .setRedirectUri(SpotifyHttpManager.makeUri(BACKEND_URL + "/user/callback"))
                 .build();
-                
+
         AuthorizationCodeRequest authorizationCodeRequest = spotifyApi.authorizationCode(userCode).build();
 
         try {
@@ -81,25 +99,43 @@ public class UserController {
 
             spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken());
             spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken());
-        } catch (Exception e ) {
-            String frontendUrl = FRONTEND_URL + "/loginFailure";
-            response.sendRedirect(frontendUrl);
-            throw e;
-        }
-
-
-        final GetCurrentUsersProfileRequest getCurrentUsersProfileRequest = spotifyApi.getCurrentUsersProfile().build();
-        User user = null;
-        try {
-            user = getCurrentUsersProfileRequest.execute();
         } catch (Exception e) {
             String frontendUrl = FRONTEND_URL + "/loginFailure";
             response.sendRedirect(frontendUrl);
             throw e;
         }
-        userService.registerOrGetUser(user);
-        String frontendUrl = FRONTEND_URL + "/loginSuccess?token=" + spotifyApi.getAccessToken();
-        System.out.println("Redirecting to: " + frontendUrl);
-        response.sendRedirect(frontendUrl);
+
+        final GetCurrentUsersProfileRequest getCurrentUsersProfileRequest = spotifyApi.getCurrentUsersProfile().build();
+        User spotifyUser = null;
+        try {
+            spotifyUser = getCurrentUsersProfileRequest.execute();
+        } catch (Exception e) {
+            String frontendUrl = FRONTEND_URL + "/loginFailure";
+            response.sendRedirect(frontendUrl);
+            throw e;
+        }
+
+        pt.migfonseca.vibecheck.model.User user = userService.registerOrGetUser(spotifyUser);
+        
+        String redirectUrl = buildRedirectUrl(FRONTEND_URL, spotifyApi.getAccessToken(), user.toDTO());
+        response.sendRedirect(redirectUrl);
     }
+
+    private String buildRedirectUrl(String baseUrl, String token, UserDTO userDTO) throws UnsupportedEncodingException {
+        StringBuilder redirectUrl = new StringBuilder(baseUrl + "/loginSuccess?");
+        redirectUrl.append("token=").append(URLEncoder.encode(token, StandardCharsets.UTF_8.toString()));
+        redirectUrl.append("&id=").append(userDTO.getId());
+        redirectUrl.append("&email=").append(URLEncoder.encode(userDTO.getEmail(), StandardCharsets.UTF_8.toString()));
+        redirectUrl.append("&username=").append(URLEncoder.encode(userDTO.getUsername(), StandardCharsets.UTF_8.toString()));
+        redirectUrl.append("&spotifyId=").append(URLEncoder.encode(userDTO.getSpotifyId(), StandardCharsets.UTF_8.toString()));
+        redirectUrl.append("&score=").append(userDTO.getScore());
+        redirectUrl.append("&admin=").append(userDTO.isAdmin());
+        
+        for (Map.Entry<Integer, String> entry : userDTO.getImages().entrySet()) {
+            redirectUrl.append("&image" + entry.getKey() + "=").append(URLEncoder.encode(entry.getValue(), StandardCharsets.UTF_8.toString()));
+        }
+
+        return redirectUrl.toString();
+    }
+
 }

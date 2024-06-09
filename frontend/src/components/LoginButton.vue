@@ -2,7 +2,7 @@
   <div class="header-container">
     <div class="login-button">
       <div class="actual-button" @click="handleClick">
-        <h3 class="button-text">{{ buttonText }}</h3>
+        <h3 class="button-text">{{ isLoggedIn ? username : 'Log In' }}</h3>
         <span class="logos">
           <img class="login-logo" :src="loginLogo" v-if="!isLoggedIn" />
           <div class="hamburger" :class="{ active: isDropdownOpen }" v-else>
@@ -41,9 +41,10 @@ export default defineComponent({
     const showLoginModal = ref(false);
 
     const isLoggedIn = computed(() => userStore.getIsLoggedIn);
+    const username = computed(() => userStore.getUser?.username || "");
 
     const buttonText = computed(() => {
-      return isLoggedIn.value ? "Log Out" : "Log In";
+      return isLoggedIn.value ? username.value : "Log In";
     });
 
     const handleClick = async () => {
@@ -83,7 +84,8 @@ export default defineComponent({
       goToProfile,
       viewHistory,
       logout,
-      loginLogo
+      loginLogo,
+      username
     };
   }
 });
@@ -162,6 +164,12 @@ export default defineComponent({
   background-color: rgba(202, 203, 207, 0.4); /* Slightly stronger background hover color */
 }
 
+.username {
+  margin-left: 10px;
+  font-size: 20px;
+  color: #cacbcf;
+}
+
 .dropdown-menu {
   position: absolute;
   top: calc(100% + 5px);
@@ -230,6 +238,10 @@ export default defineComponent({
   }
 
   .actual-button .button-text {
+    font-size: 16px;
+  }
+
+  .username {
     font-size: 16px;
   }
 }

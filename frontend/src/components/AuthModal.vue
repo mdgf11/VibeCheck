@@ -70,7 +70,7 @@ export default defineComponent({
         }
 
         const data = await response.json();
-        userStore.setToken(data);
+        userStore.setTokenAndUser(data);
         closeModal();
       } catch (error) {
         console.error('Login failed:', error);
@@ -96,7 +96,7 @@ export default defineComponent({
         }
 
         const data = await response.json();
-        userStore.setToken(data);
+        userStore.setTokenAndUser(data);
         closeModal();
       } catch (error) {
         console.error('Registration failed:', error);

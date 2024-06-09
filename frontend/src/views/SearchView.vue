@@ -13,17 +13,54 @@
       <SearchInputComponent />
     </div>
     <div class="help">Search for any artist, song, genre or vibe and get the playlist you want</div>
+    
+    <!-- Admin-specific content -->
+    <div v-if="isAdmin" class="admin-section">
+      <div class="admin-search">
+        <input type="text" v-model="adminSearchQuery" placeholder="Admin Search" />
+        <button @click="handleAdminSearch">Search</button>
+      </div>
+      <button @click="handleAdminDiscover">Go to Discover</button>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
+import { defineComponent, computed, ref } from "vue";
+import useUserStore from "@/stores/userStore";
 import HeaderComponent from "@/components/HeaderComponent.vue";
 import SearchInputComponent from "@/components/SearchInputComponent.vue";
 
 export default defineComponent({
   name: 'SearchView',
-  components: { HeaderComponent, SearchInputComponent }
+  components: { HeaderComponent, SearchInputComponent },
+  setup() {
+    const userStore = useUserStore();
+    const adminSearchQuery = ref<string>('');
+
+    const isAdmin = computed(() => userStore.user?.admin);
+    const token = computed(() => userStore.token);
+
+    const handleAdminSearch = async () => {
+      try {
+        const data = await userStore.fetchAdminSearchResults(adminSearchQuery.value);
+        console.log('Admin search result:', data);
+      } catch (error) {
+        console.error("Failed to fetch admin search results:", error);
+      }
+    };
+
+    const handleAdminDiscover = async () => {
+      try {
+        const data = await userStore.adminDiscover();
+        console.log('Admin discover result:', data);
+      } catch (error) {
+        console.error("Failed to fetch admin search results:", error);
+      }
+    };
+
+    return { isAdmin, adminSearchQuery, handleAdminSearch, handleAdminDiscover };
+  }
 });
 </script>
 
@@ -68,6 +105,32 @@ export default defineComponent({
   word-wrap: break-word;
   width: 80%;
   max-width: 500px;
+}
+
+.admin-section {
+  margin-top: 20px;
+  text-align: center;
+}
+
+.admin-search {
+  margin-bottom: 10px;
+}
+
+.admin-search input {
+  padding: 10px;
+  font-size: 16px;
+  width: 60%;
+}
+
+.admin-search button {
+  padding: 10px;
+  font-size: 16px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
 }
 
 /* Media queries for SearchView based on width */

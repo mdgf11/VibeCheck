@@ -5,7 +5,6 @@ import java.io.IOException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -21,7 +20,6 @@ public class PlaylistController {
     @Autowired
     PlaylistService service;
 
-    @CrossOrigin(origins = "http://localhost:8081")
     @GetMapping
     ResponseEntity<PlaylistDTO> createPlaylist(@RequestParam("query") String query, @RequestParam(required = false, defaultValue = "") String artist, @RequestParam("type") String type) {
         try {

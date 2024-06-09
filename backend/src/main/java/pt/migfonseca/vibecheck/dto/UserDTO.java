@@ -16,6 +16,7 @@ public class UserDTO {
     private String spotifyId;
     private int score;
     private Map<Integer, String> images;
+    private boolean admin;
 
     public UserDTO(String jwt) {
     }
