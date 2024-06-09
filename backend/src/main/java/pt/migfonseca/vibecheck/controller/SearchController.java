@@ -21,7 +21,7 @@ public class SearchController {
     @Autowired
     SearchService service;
 
-    @CrossOrigin(origins = "*")
+    @CrossOrigin(origins = "http://localhost:8081")
     @GetMapping
     ResponseEntity<List<SearchResponseDTO>> search(@RequestParam("query") String query) {
         

@@ -3,8 +3,7 @@ import SearchView from '@/views/SearchView.vue';
 import GameView from '@/views/GameView.vue';
 import PlaylistView from '@/views/PlaylistView.vue';
 import LeaderboardView from '@/views/LeaderboardView.vue';
-import useUserStore from '@/stores/userStore';
-import { getProfile } from '@/services/SpotifyAPIController';
+import { handleRedirect } from '@/services/spotifyHandler';
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -33,24 +32,13 @@ const routes: Array<RouteRecordRaw> = [
     component: LeaderboardView
   },
   {
-    path: '/callback',
-    name: 'callback',
+    path: '/loginSuccess',
+    name: 'loginSuccess',
     component: {
-      template: '<div></div>',
+      template: '<div>Login Successful</div>',
       created() {
-        const params = new URLSearchParams(window.location.search);
-        const code = params.get("code");
-        const state = params.get("state");
-
-        const targetPath = state ? decodeURIComponent(state) : '/search';
-
-        if (code) {
-          const userStore = useUserStore();
-          userStore.setCode(code);
-          getProfile(targetPath);
-        }
-
-        this.$router.replace({ path: targetPath });
+        handleRedirect(); // Handle the redirect from the backend
+        this.$router.replace({ path: '/' });
       }
     }
   }

@@ -24,6 +24,7 @@ export default defineConfig({
     port: port, // Use the port from .env or fallback to 3000
   },
   define: {
+    '__VUE_PROD_HYDRATION_MISMATCH_DETAILS__': false,
     'process.env': {
       VITE_APP_BASE_URL: baseURL,
       VITE_APP_PORT: port,

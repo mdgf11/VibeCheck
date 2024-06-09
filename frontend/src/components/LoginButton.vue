@@ -20,20 +20,20 @@
         </div>
       </transition>
     </div>
-    <LoginModal v-if="showLoginModal" @close="showLoginModal = false" />
+    <AuthModal v-if="showLoginModal" :show="showLoginModal" @close="showLoginModal = false" />
   </div>
 </template>
 
 <script lang="ts">
 import { defineComponent, ref, computed } from "vue";
-import LoginModal from "@/components/LoginModal.vue";
+import AuthModal from "@/components/AuthModal.vue";
 import loginLogo from "@/assets/img/login-logo.png";
 import useUserStore from "@/stores/userStore";
 
 export default defineComponent({
   name: 'LoginButton',
   components: {
-    LoginModal
+    AuthModal
   },
   setup() {
     const userStore = useUserStore();
@@ -43,7 +43,7 @@ export default defineComponent({
     const isLoggedIn = computed(() => userStore.getIsLoggedIn);
 
     const buttonText = computed(() => {
-      return isLoggedIn.value ? userStore.getProfile?.display_name || "Log Out" : "Log In";
+      return isLoggedIn.value ? "Log Out" : "Log In";
     });
 
     const handleClick = async () => {
@@ -88,6 +88,7 @@ export default defineComponent({
   }
 });
 </script>
+
 
 <style scoped>
 .header-container {

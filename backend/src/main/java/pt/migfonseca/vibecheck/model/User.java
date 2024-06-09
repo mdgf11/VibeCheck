@@ -1,8 +1,16 @@
 package pt.migfonseca.vibecheck.model;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.security.core.userdetails.UserDetails;
+
+import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import lombok.Data;
@@ -40,9 +48,29 @@ public class User {
     
     private String spotifyId;
 
-    private int score;
+    @OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Image> images;
+
+    private int score = 0;
 
     public UserDTO toDTO() {
-        return new UserDTO(id, email, username, spotifyId, score);
-    };
+        return new UserDTO(id,
+                email,
+                username,
+                spotifyId,
+                score,
+                images.stream().collect(Collectors.toMap(Image::getHeight, Image::getUrl)));
+    }
+
+    public User(se.michaelthelin.spotify.model_objects.specification.User spotifyUser) {
+        this.username = spotifyUser.getDisplayName();
+        this.email = spotifyUser.getEmail();
+        this.spotifyId = spotifyUser.getId();
+        this.images = List.of(spotifyUser.getImages()).stream().map(image -> new Image(image.getHeight(), image.getUrl())).toList();
+    }
+
+    public UserDetails toUserDetails() {
+        
+        return new org.springframework.security.core.userdetails.User(this.email, this.password, new ArrayList<>());
+    }
 }

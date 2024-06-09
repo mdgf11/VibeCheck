@@ -1,5 +1,7 @@
 package pt.migfonseca.vibecheck.dto;
 
+import java.util.Map;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,11 +10,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserDTO {
-
     private long id;
     private String email;
     private String username;
     private String spotifyId;
     private int score;
+    private Map<Integer, String> images;
 
+    public UserDTO(String jwt) {
+    }
 }

@@ -21,7 +21,7 @@ public class PlaylistController {
     @Autowired
     PlaylistService service;
 
-    @CrossOrigin(origins = "*")
+    @CrossOrigin(origins = "http://localhost:8081")
     @GetMapping
     ResponseEntity<PlaylistDTO> createPlaylist(@RequestParam("query") String query, @RequestParam(required = false, defaultValue = "") String artist, @RequestParam("type") String type) {
         try {

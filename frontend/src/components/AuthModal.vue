@@ -3,7 +3,7 @@
     <div class="modal-content">
       <div v-if="isLogin">
         <h2>Login</h2>
-        <input type="text" placeholder="Username" v-model="username">
+        <input type="email" placeholder="Email" v-model="email">
         <input type="password" placeholder="Password" v-model="password">
         <button @click="login">Login</button>
         <p>or continue with</p>
@@ -26,8 +26,8 @@
 
 <script>
 import { defineComponent, ref } from 'vue';
+import { redirectToSpotify } from "@/services/spotifyHandler";
 import useUserStore from "@/stores/userStore";
-import { getProfile } from "@/services/SpotifyAPIController";
 
 export default defineComponent({
   name: 'AuthModal',
@@ -38,6 +38,7 @@ export default defineComponent({
     }
   },
   setup(props, { emit }) {
+    const userStore = useUserStore();
     const username = ref('');
     const password = ref('');
     const email = ref('');
@@ -51,23 +52,59 @@ export default defineComponent({
       isLogin.value = !isLogin.value;
     };
 
-    const login = () => {
-      // Logic for logging in with username and password
-      console.log('Logging in with username:', username.value);
-      console.log('Logging in with password:', password.value);
+    const login = async () => {
+      try {
+        const response = await fetch(import.meta.env.VITE_APP_BACKEND_URL + '/user/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: email.value,
+            password: password.value
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Login failed');
+        }
+
+        const data = await response.json();
+        userStore.setToken(data);
+        closeModal();
+      } catch (error) {
+        console.error('Login failed:', error);
+      }
     };
 
-    const register = () => {
-      // Logic for registering a new user
-      console.log('Registering with username:', username.value);
-      console.log('Registering with password:', password.value);
-      console.log('Registering with email:', email.value);
+    const register = async () => {
+      try {
+        const response = await fetch(import.meta.env.VITE_APP_BACKEND_URL + '/user/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: email.value,
+            username: username.value,
+            password: password.value
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Registration failed');
+        }
+
+        const data = await response.json();
+        userStore.setToken(data);
+        closeModal();
+      } catch (error) {
+        console.error('Registration failed:', error);
+      }
     };
 
     const loginWithSpotify = () => {
-      // Logic for logging in with Spotify
-      const path = window.location.pathname;
-      getProfile(path);
+      redirectToSpotify();
     };
 
     return {
