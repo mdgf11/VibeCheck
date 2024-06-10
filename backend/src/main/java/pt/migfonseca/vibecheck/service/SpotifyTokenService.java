@@ -167,7 +167,7 @@ public class SpotifyTokenService {
 
     private void delay() {
         try {
-            Thread.sleep(750);
+            Thread.sleep(500);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             System.out.println("Thread was interrupted, Failed to complete operation");

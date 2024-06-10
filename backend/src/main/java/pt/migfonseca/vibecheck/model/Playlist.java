@@ -25,16 +25,10 @@ import pt.migfonseca.vibecheck.model.ratings.VibeRating;
 public class Playlist extends RaterEntity{
 
     public Playlist(){
+        super();
+        this.artists = new ArrayList<>();
         this.albums = new ArrayList<>();
         this.songs = new ArrayList<>();
-    }
-
-    public Playlist(String name, List<Song> songs) {
-        super();
-        this.name = name;
-        this.albums = new ArrayList<>();
-        this.songs = songs;
-        
     }
 
     private String name;

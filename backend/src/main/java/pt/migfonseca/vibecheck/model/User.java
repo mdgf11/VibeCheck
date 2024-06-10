@@ -11,6 +11,9 @@ import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
@@ -54,6 +57,16 @@ public class User {
     private int score = 0;
 
     private boolean admin = false;
+
+    private String spotifyAccessToken;
+
+    private String spotifyRefreshToken;
+
+    @ManyToMany
+    @JoinTable(name="user_playlist",
+                joinColumns = @JoinColumn(name="user_id"),
+                inverseJoinColumns = @JoinColumn(name="playlist_id"))
+    private List<Playlist> playlists;
 
     public UserDTO toDTO() {
         return new UserDTO(id,

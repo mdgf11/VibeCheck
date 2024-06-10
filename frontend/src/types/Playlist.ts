@@ -6,4 +6,7 @@ export interface Playlist {
   artists: Artist[];
   genres: Map<string, number>;
   vibes: Map<string, number>;
+  query: string;
+  type: string;
+  queryArtist: string;
 }

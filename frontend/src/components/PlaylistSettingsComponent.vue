@@ -3,11 +3,32 @@
     <div class="close-button" @click="closeSettings">&gt;</div>
     <h3>Playlist Settings</h3>
     <div class="setting-content">
+      <div class="setting-option">
+        <div class="slider-group">
+          <div class="slider-container">
+            <button class="toggle-button" @click="toggleOption">{{ isNumSongs ? 'Nº Songs' : 'Duration (min)' }}</button>
+            <div v-if="isNumSongs">
+              <label>
+                <input type="number" v-model.number="numSongs" :disabled="!isNumSongs" min="0" max="60" class="number-input" />
+              </label>
+              <input type="range" v-model.number="numSongs" :disabled="!isNumSongs" :min="0" :max="60" class="slider" />
+            </div>
+            <div v-if="!isNumSongs">
+              <label>
+                <input type="number" v-model.number="maxDuration" :disabled="isNumSongs" min="0" max="300" class="number-input" />
+              </label>
+              <input type="range" v-model.number="maxDuration" :disabled="isNumSongs" :min="0" :max="300" class="slider" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-option">
+        <button class="toggle-new-songs-button" @click="toggleNewSongs">{{ newSongs ? 'New Songs: ON' : 'New Songs: OFF' }}</button>
+      </div>
+
       <!-- Artist Selected Items and Search -->
       <div class="setting-option">
-        <div v-for="item in selectedItems.filter(item => item.type === 'artist')" :key="item.name">
-          <SelectedItemComponent :item="item" />
-        </div>
         <label>Include/Exclude Artists:</label>
         <input type="text" v-model="artistQuery" placeholder="Search Artists" @keyup="handleKeyUp('artist', $event)" />
         <transition name="box" appear @before-enter="beforeEnter" @enter="enter" @after-enter="afterEnter" @before-leave="beforeLeave" @leave="leave" @after-leave="afterLeave">
@@ -17,13 +38,13 @@
             </div>
           </div>
         </transition>
+        <div v-for="(item, index) in selectedItems.filter(item => item.type === 'artist')" :key="item.name">
+          <SelectedItemComponent :item="item" :index="index" @remove-item="removeItem" />
+        </div>
       </div>
 
       <!-- Genre Selected Items and Search -->
       <div class="setting-option">
-        <div v-for="item in selectedItems.filter(item => item.type === 'genre')" :key="item.name">
-          <SelectedItemComponent :item="item" />
-        </div>
         <label>Include/Exclude Genres:</label>
         <input type="text" v-model="genreQuery" placeholder="Search Genres" @keyup="handleKeyUp('genre', $event)" />
         <transition name="box" appear @before-enter="beforeEnter" @enter="enter" @after-enter="afterEnter" @before-leave="beforeLeave" @leave="leave" @after-leave="afterLeave">
@@ -33,13 +54,13 @@
             </div>
           </div>
         </transition>
+        <div v-for="(item, index) in selectedItems.filter(item => item.type === 'genre')" :key="item.name">
+          <SelectedItemComponent :item="item" :index="index" @remove-item="removeItem" />
+        </div>
       </div>
 
       <!-- Vibe Selected Items and Search -->
       <div class="setting-option">
-        <div v-for="item in selectedItems.filter(item => item.type === 'vibe')" :key="item.name">
-          <SelectedItemComponent :item="item" />
-        </div>
         <label>Include/Exclude Vibes:</label>
         <input type="text" v-model="vibeQuery" placeholder="Search Vibes" @keyup="handleKeyUp('vibe', $event)" />
         <transition name="box" appear @before-enter="beforeEnter" @enter="enter" @after-enter="afterEnter" @before-leave="beforeLeave" @leave="leave" @after-leave="afterLeave">
@@ -49,9 +70,12 @@
             </div>
           </div>
         </transition>
+        <div v-for="(item, index) in selectedItems.filter(item => item.type === 'vibe')" :key="item.name">
+          <SelectedItemComponent :item="item" :index="index" @remove-item="removeItem" />
+        </div>
       </div>
+      <button class="apply-settings-button" @click="applySettings">Apply Settings</button>
     </div>
-    <button class="apply-settings-button" @click="applySettings">Apply Settings</button>
   </div>
 </template>
 
@@ -60,6 +84,7 @@ import { defineComponent, ref, watch, computed, Ref } from 'vue';
 import { PlaylistSettings } from '@/types/PlaylistSettings';
 import { Artist } from '@/types/Artist'; // Ensure the path to your Artist type is correct
 import SelectedItemComponent from '@/components/SelectedItemComponent.vue';
+import usePlaylistStore from '@/stores/playlistStore';
 
 const env = import.meta.env;
 
@@ -75,10 +100,11 @@ export default defineComponent({
     }
   },
   setup(props, { emit }) {
-    const showNumSongs = ref(true);
-
-    const numSongs = ref(props.settings.numSongs);
-    const maxDuration = ref(props.settings.maxDuration);
+    const playlistStore = usePlaylistStore();
+    const isNumSongs = ref(true); // Add a ref to track which option is selected
+    const newSongs = ref(props.settings.newSongs || false);
+    const numSongs = ref(props.settings.numSongs || 30); // Set default values
+    const maxDuration = ref(props.settings.maxDuration || 60); // Set default values
 
     const artistQuery = ref('');
     const genreQuery = ref('');
@@ -95,7 +121,8 @@ export default defineComponent({
     interface SelectedItem {
       name: string;
       type: string;
-      sliderValue: number;
+      minValue: number;
+      maxValue: number;
     }
 
     const selectedItems: Ref<SelectedItem[]> = ref([]);
@@ -106,14 +133,55 @@ export default defineComponent({
     let timeout: ReturnType<typeof setTimeout>;
 
     const toggleOption = () => {
-      showNumSongs.value = !showNumSongs.value;
+      isNumSongs.value = !isNumSongs.value;
+    };
+
+    const toggleNewSongs = () => {
+      newSongs.value = !newSongs.value;
     };
 
     const applySettings = () => {
-      emit('update-settings', {
-        numSongs: showNumSongs.value ? numSongs.value : null,
-        maxDuration: !showNumSongs.value ? maxDuration.value : null,
+      // Create maps to hold the settings
+      const minSongsPerArtist = new Map<string, number>();
+      const maxSongsPerArtist = new Map<string, number>();
+      const minSongsPerGenre = new Map<string, number>();
+      const maxSongsPerGenre = new Map<string, number>();
+      const minSongsPerVibe = new Map<string, number>();
+      const maxSongsPerVibe = new Map<string, number>();
+
+      // Populate the maps with values from selectedItems
+      selectedItems.value.forEach(item => {
+        switch (item.type) {
+          case 'artist':
+            minSongsPerArtist.set(item.name, item.minValue);
+            maxSongsPerArtist.set(item.name, item.maxValue);
+            break;
+          case 'genre':
+            minSongsPerGenre.set(item.name, item.minValue);
+            maxSongsPerGenre.set(item.name, item.maxValue);
+            break;
+          case 'vibe':
+            minSongsPerVibe.set(item.name, item.minValue);
+            maxSongsPerVibe.set(item.name, item.maxValue);
+            break;
+        }
       });
+      // Create the settings object
+      const settings: PlaylistSettings = {
+        newSongs: newSongs.value,
+        numSongs: isNumSongs.value ? numSongs.value : null,
+        maxDuration: !isNumSongs.value ? maxDuration.value : null,
+        minSongsPerArtist,
+        maxSongsPerArtist,
+        minSongsPerGenre,
+        maxSongsPerGenre,
+        minSongsPerVibe,
+        maxSongsPerVibe,
+      };
+      console.log(settings);
+      // Apply the settings and emit the update
+      playlistStore.applySettings(settings);
+      emit('update-settings', settings);
     };
 
     const handleKeyUp = (type: string, event: KeyboardEvent) => {
@@ -140,13 +208,19 @@ export default defineComponent({
         query = artistQuery.value;
         results = artistResults;
         showArtistSuggestions.value = true;
+        showGenreSuggestions.value = false;
+        showVibeSuggestions.value = false;
       } else if (type === 'genre') {
         query = genreQuery.value;
         results = genreResults;
+        showArtistSuggestions.value = false;
         showGenreSuggestions.value = true;
+        showVibeSuggestions.value = false;
       } else if (type === 'vibe') {
         query = vibeQuery.value;
         results = vibeResults;
+        showArtistSuggestions.value = false;
+        showGenreSuggestions.value = false;
         showVibeSuggestions.value = true;
       }
 
@@ -154,8 +228,7 @@ export default defineComponent({
         try {
           const url = env.VITE_APP_BACKEND_URL + `/search?query=${query}&type=${type}`;
           const response = await fetch(url);
-          const data = await response.json();
-          console.log(data);
+          const data: [] = await response.json();
           if (type === 'artist') {
             artistResults.value = data || [];
           } else if (type === 'genre') {
@@ -163,11 +236,25 @@ export default defineComponent({
           } else if (type === 'vibe') {
             vibeResults.value = data.map((item: any) => item.name) || [];
           }
+          if (data !== null) {
+            if (data.length === 0) {
+              showArtistSuggestions.value = false;
+              showGenreSuggestions.value = false;
+              showVibeSuggestions.value = false;
+            }
+          }
         } catch (error) {
           console.error(`Failed to fetch ${type} results:`, error);
+          showArtistSuggestions.value = false;
+          showGenreSuggestions.value = false;
+          showVibeSuggestions.value = false;
         }
       } else if (results !== null) {
         results.value = [];
+        showArtistSuggestions.value = false;
+        showGenreSuggestions.value = false;
+        showVibeSuggestions.value = false;
+
       }
     };
 
@@ -190,7 +277,11 @@ export default defineComponent({
     };
 
     const addItem = (item: { name: string, type: string }) => {
-      selectedItems.value.push({ ...item, sliderValue: 50 });
+      selectedItems.value.push({ ...item, minValue: 0, maxValue: 20 });
+    };
+
+    const removeItem = (index: number) => {
+      selectedItems.value.splice(index, 1);
     };
 
     const filteredArtistResults = computed(() => artistResults.value.filter(artist => artist.name.toLowerCase().includes(artistQuery.value.toLowerCase())));
@@ -198,11 +289,13 @@ export default defineComponent({
     const filteredVibeResults = computed(() => vibeResults.value.filter(vibe => vibe.toLowerCase().includes(vibeQuery.value.toLowerCase())));
 
     watch(() => props.settings, (newSettings) => {
-      if (newSettings) {
-        numSongs.value = newSettings.numSongs;
-        maxDuration.value = newSettings.maxDuration;
-      }
-    }, { immediate: true });
+    if (newSettings) {
+      newSongs.value = newSettings.newSongs ?? false; // Ensure newSongs is always a boolean
+      numSongs.value = newSettings.numSongs !== null ? newSettings.numSongs : 20; // Default value of 30 if numSongs is null
+      maxDuration.value = newSettings.maxDuration !== null ? newSettings.maxDuration : 60; // Default value of 60 if maxDuration is null
+    }
+  }, { immediate: true });
+
 
     const beforeEnter = (el: HTMLElement) => { el.style.opacity = '0'; el.style.maxHeight = '0'; };
     const enter = (el: HTMLElement, done: () => void) => {
@@ -228,13 +321,15 @@ export default defineComponent({
     };
 
     return {
-      showNumSongs,
+      isNumSongs,
+      newSongs,
       numSongs,
       maxDuration,
       artistQuery,
       genreQuery,
       vibeQuery,
       toggleOption,
+      toggleNewSongs,
       applySettings,
       handleKeyUp,
       search,
@@ -257,7 +352,8 @@ export default defineComponent({
       beforeLeave,
       leave,
       afterLeave,
-      closeSettings
+      closeSettings,
+      removeItem
     };
   }
 });
@@ -268,6 +364,7 @@ export default defineComponent({
   position: absolute;
   right: 0;
   top: 50px;
+  bottom: 0; /* Add this to make it occupy the remaining height */
   background: rgba(51, 51, 51, 0.9);
   color: #fff;
   padding: 20px;
@@ -275,9 +372,11 @@ export default defineComponent({
   z-index: 1000;
   width: 300px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
-  max-height: 80vh;
+  max-height: calc(100vh - 50px); /* Adjust max-height */
   display: flex;
   flex-direction: column;
+  border-width: 0px;
+  box-shadow:0px;
 }
 
 .close-button {
@@ -330,39 +429,78 @@ export default defineComponent({
   font-weight: bold;
 }
 
-.setting-option input {
-  width: calc(100% - 30px);
-  padding: 10px;
-  border: none;
-  border-radius: 5px;
-  background: #555;
-  color: #fff;
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.slider-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.slider {
+  width: 100%;
+  margin: 2px 0;
+  height: 10px; /* Adjust the height to make it smaller */
+}
+
+.number-input {
+  width: 50px;
+  margin: 2px 0;
+  height: 20px; /* Adjust the height to make it smaller */
+  /* Remove the little up and down arrows for the input box */
+  -moz-appearance: textfield;
+}
+
+.number-input::-webkit-outer-spin-button,
+.number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 12px; /* Adjust the font size to make it smaller */
 }
 
 .toggle-button {
   background: #888;
   color: #fff;
-  padding: 5px;
+  padding: 5px 10px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
   font-size: 12px;
-  margin-left: 10px;
+  align-self: left; /* Center the button vertically */
+  height: 30px; /* Match the height of the slider for better alignment */
+  margin-top: 10px;
 }
 
-.apply-settings-button {
-  background: #f39c12;
+.toggle-button:hover {
+  background: #777;
+}
+
+.toggle-new-songs-button {
+  background: #888;
   color: #fff;
-  padding: 10px;
+  padding: 5px 10px;
   border: none;
   border-radius: 5px;
   cursor: pointer;
-  font-weight: bold;
-  transition: background 0.3s ease;
+  font-size: 12px;
+  margin-top: 10px;
 }
 
-.apply-settings-button:hover {
-  background: #e67e22;
+.toggle-new-songs-button:hover {
+  background: #777;
 }
 
 .suggestions {
@@ -396,5 +534,18 @@ export default defineComponent({
 .suggestion:hover {
   background-color: rgba(255, 255, 255, 0.3);
   cursor: pointer;
+}
+.apply-settings-button {
+  background-color: #4CAF50; /* Green */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 10px 0;
+  cursor: pointer;
+  border-radius: 5px;
 }
 </style>

@@ -92,11 +92,16 @@ public class UserController {
 
         AuthorizationCodeRequest authorizationCodeRequest = spotifyApi.authorizationCode(userCode).build();
 
+        String accessToken;
+        String refreshToken;
         try {
             final AuthorizationCodeCredentials authorizationCodeCredentials = authorizationCodeRequest.execute();
 
-            spotifyApi.setAccessToken(authorizationCodeCredentials.getAccessToken());
-            spotifyApi.setRefreshToken(authorizationCodeCredentials.getRefreshToken());
+            accessToken = authorizationCodeCredentials.getAccessToken();
+            refreshToken = authorizationCodeCredentials.getRefreshToken();
+
+            spotifyApi.setAccessToken(accessToken);
+            spotifyApi.setRefreshToken(refreshToken);
         } catch (Exception e) {
             String frontendUrl = FRONTEND_URL + "/loginFailure";
             response.sendRedirect(frontendUrl);
@@ -114,8 +119,9 @@ public class UserController {
         }
 
         pt.migfonseca.vibecheck.model.User user = userService.registerOrGetUser(spotifyUser);
-        
-        String redirectUrl = buildRedirectUrl(FRONTEND_URL, spotifyApi.getAccessToken(), user.toDTO());
+        userService.updateSpotifyTokens(user.getId(), accessToken, refreshToken);
+
+        String redirectUrl = buildRedirectUrl(FRONTEND_URL, accessToken, user.toDTO());
         response.sendRedirect(redirectUrl);
     }
 

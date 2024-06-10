@@ -21,10 +21,7 @@
               :key="'artist' + index"
               @click="generatePlaylist(artist.name, 'artist')"
             >
-              <PlaylistButtonComponent 
-                :text="artist.name"
-                queryType="artist"
-              />
+              <PlaylistButtonComponent :text="artist.name" queryType="artist" />
             </div>
           </div>
           <div class="playlist-genres">
@@ -34,23 +31,17 @@
               :key="index"
               @click="generatePlaylist(genre, 'genre')"
             >
-              <PlaylistButtonComponent 
-                :text="genre"
-                queryType="genre"
-              />
+              <PlaylistButtonComponent :text="genre" queryType="genre" />
             </div>
           </div>
           <div class="playlist-vibes">
             <span class="section-title">Vibes:</span>
             <div
               v-for="(vibe, index) in getTopVibes()"
-              :key='index'
+              :key="index"
               @click="generatePlaylist(vibe, 'vibe')"
             >
-              <PlaylistButtonComponent 
-                :text='vibe'
-                queryType="vibe"
-              />
+              <PlaylistButtonComponent :text="vibe" queryType="vibe" />
             </div>
           </div>
         </div>
@@ -60,11 +51,7 @@
     <div class="playlist-container">
       <div v-if="playlist">
         <transition-group name="song-list" tag="div">
-          <SongItem
-            v-for="song in playlist.songs"
-            :key="song.id"
-            :song="song"
-          />
+          <SongItem v-for="song in playlist.songs" :key="song.id" :song="song" />
         </transition-group>
       </div>
       <div v-else class="no-playlist">
@@ -73,6 +60,7 @@
     </div>
   </div>
 </template>
+
 
 <script lang="ts">
 import { defineComponent, computed, ref } from "vue";
@@ -99,14 +87,15 @@ export default defineComponent({
     const playlist = computed(() => playlistStore.getPlaylist);
     const settingsOpen = ref(false);
     const playlistSettings = ref<PlaylistSettings>({
+      newSongs: null,
       numSongs: null,
       maxDuration: null,
-      minSongsPerArtist: new Map(),
-      maxSongsPerArtist: new Map(),
-      minSongsPerGenre: new Map(),
-      maxSongsPerGenre: new Map(),
-      minSongsPerVibe: new Map(),
-      maxSongsPerVibe: new Map(),
+      minSongsPerArtist: null,
+      maxSongsPerArtist: null,
+      minSongsPerGenre: null,
+      maxSongsPerGenre: null,
+      minSongsPerVibe: null,
+      maxSongsPerVibe: null,
     });
 
     const toggleSettings = () => {
@@ -434,5 +423,193 @@ export default defineComponent({
   .playlist-vibes {
     justify-content: center;
   }
+}
+
+/* Fixed settings panel */
+.playlist-settings {
+  position: fixed;
+  right: 0;
+  top: 50px;
+  bottom: 0; /* Add this to make it occupy the remaining height */
+  background: rgba(51, 51, 51, 0.9);
+  color: #fff;
+  padding: 20px;
+  border-radius: 0 10px 10px 0;
+  z-index: 1000;
+  width: 300px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  max-height: calc(100vh - 50px); /* Adjust max-height */
+  display: flex;
+  flex-direction: column;
+}
+
+.close-button {
+  position: absolute;
+  left: -20px;
+  top: 0;
+  height: 100%;
+  width: 20px;
+  background: rgba(51, 51, 51, 0.9);
+  color: #fff;
+  text-align: center;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.close-button:hover {
+  background: rgba(30, 30, 30, 0.9);
+}
+
+.setting-content {
+  flex: 1;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.setting-content::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+}
+
+.setting-content {
+  -ms-overflow-style: none;  /* Internet Explorer 10+ */
+  scrollbar-width: none;  /* Firefox */
+}
+
+.setting-option {
+  margin-bottom: 15px;
+  display: flex;
+  flex-direction: column;
+}
+
+.setting-option label {
+  flex: 1;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.slider-group {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+}
+
+.slider-container {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.slider {
+  width: 100%;
+  margin: 2px 0;
+  height: 10px; /* Adjust the height to make it smaller */
+}
+
+.number-input {
+  width: 50px;
+  margin: 2px 0;
+  height: 20px; /* Adjust the height to make it smaller */
+  /* Remove the little up and down arrows for the input box */
+  -moz-appearance: textfield;
+}
+
+.number-input::-webkit-outer-spin-button,
+.number-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 12px; /* Adjust the font size to make it smaller */
+}
+
+.toggle-button {
+  background: #888;
+  color: #fff;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  align-self: left; /* Center the button vertically */
+  height: 30px; /* Match the height of the slider for better alignment */
+  margin-top: 10px;
+}
+
+.toggle-button:hover {
+  background: #777;
+}
+
+.toggle-new-songs-button {
+  background: #888;
+  color: #fff;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 12px;
+  margin-top: 10px;
+}
+
+.toggle-new-songs-button:hover {
+  background: #777;
+}
+
+.suggestions {
+  max-width: 100%;
+  padding: 10px;
+  list-style: none;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2);
+  background: #bfbebe;
+  background-color: rgba(255, 255, 255, 0.2);
+  color: white;
+  font-family: 'Satoshi', sans-serif;
+  transition: max-height 0.3s ease, opacity 0.3s ease;
+  overflow-y: auto;
+  max-height: 50vh;
+}
+
+.suggestion {
+  padding: 5px;
+  font-size: 14px;
+  color: white;
+  border-bottom: 1px solid #ccc;
+}
+
+.suggestion:last-child {
+  border-bottom: none;
+}
+
+.suggestion:hover {
+  background-color: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+}
+.apply-settings-button {
+  background-color: #4CAF50; /* Green */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 10px 0;
+  cursor: pointer;
+  border-radius: 5px;
 }
 </style>

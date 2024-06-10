@@ -1,4 +1,5 @@
 export interface PlaylistSettings {
+    newSongs: boolean | null;
     numSongs: number | null;
     maxDuration: number | null;
     minSongsPerArtist: Map<String, number> | null;

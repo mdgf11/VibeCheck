@@ -96,10 +96,10 @@ export default defineComponent({
 
     const selectSuggestion = async (result: SearchResult) => {
       message.value = result.name;
-      const { name, type } = result;
-      
+      const { name, type, artist } = result;
+
       // Fetch and create the playlist using the store method
-      await playlistStore.fetchAndCreatePlaylist(name, type);
+      await playlistStore.fetchAndCreatePlaylist(name, type, artist || '');
 
       // Navigate to the playlist
       router.push({ name: 'playlist' });

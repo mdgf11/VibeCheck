@@ -8,8 +8,11 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.data.rest.core.annotation.RepositoryRestResource;
 
+import pt.migfonseca.vibecheck.model.Album;
 import pt.migfonseca.vibecheck.model.Artist;
+import pt.migfonseca.vibecheck.model.Genre;
 import pt.migfonseca.vibecheck.model.Song;
+import pt.migfonseca.vibecheck.model.Vibe;
 
 @RepositoryRestResource
 public interface SongRepository extends JpaRepository<Song, Long> {    
@@ -24,4 +27,13 @@ public interface SongRepository extends JpaRepository<Song, Long> {
 
     @Query("SELECT s FROM Song s JOIN s.artists a WHERE a = :artist")
     List<Song> findAllByArtist(@Param("artist") Artist artist);
+    
+    @Query("SELECT s FROM Song s JOIN s.albums a JOIN a.artists ar WHERE a = :album AND ar = :artist")
+    List<Song> findAllByAlbumAndArtist(@Param("album") Album album, @Param("artist") Artist artist);
+
+    @Query("SELECT s FROM Song s JOIN s.vibeRatings vr WHERE vr.vibe = :vibe")
+    List<Song> findAllByVibe(@Param("vibe") Vibe vibe);
+
+    @Query("SELECT s FROM Song s JOIN s.genreRatings gr WHERE gr.genre = :genre")
+    List<Song> findAllByGenre(@Param("genre") Genre genre);
 }
