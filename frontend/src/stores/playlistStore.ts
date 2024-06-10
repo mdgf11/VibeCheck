@@ -55,6 +55,7 @@ async function fetchData(name: string, type: string, artist: string) {
   if (type === 'album' || type === 'song') {
     queryParams.append('artist', artist);
   }
+  console.log(`${env.VITE_APP_BACKEND_URL}/playlist/create?${queryParams.toString()}`);
   const response = await fetch(`${env.VITE_APP_BACKEND_URL}/playlist/create?${queryParams.toString()}`);
   return await response.json();
 }

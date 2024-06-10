@@ -41,7 +41,8 @@ public class PlaylistController {
             @RequestParam("type") String type) {
         try {
             SettingsDTO settings = new SettingsDTO(null, 20, null, null, null, null, null, null, null);
-            return new ResponseEntity<>(service.getPlaylist(query, artist, type, settings), HttpStatus.OK);
+            PlaylistDTO playlistDTO = service.getPlaylist(query, artist, type, settings);
+            return new ResponseEntity<PlaylistDTO>(playlistDTO, HttpStatus.OK);
         } catch (IOException e) {
             return new ResponseEntity<>(HttpStatus.NO_CONTENT);
         }
