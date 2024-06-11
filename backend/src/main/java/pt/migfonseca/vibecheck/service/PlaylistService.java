@@ -124,11 +124,12 @@ public class PlaylistService {
         allFetchedSongs.addAll(vibeSongs);
 
         // Filter and select songs based on number of songs and maximum duration
-        final Set<Song> finalAllSongs = allSongs; // Make allSongs effectively final
+        final Set<Song> finalAllSongs = allSongs;
+        Collections.shuffle(allFetchedSongs);
+
         Set<Song> selectedSongs = allFetchedSongs.stream()
                 .filter(song -> !finalAllSongs.contains(song) &&
-                        (newSongsFilter == null || !newSongsFilter.contains(song.getSpotifyId())) &&
-                        song.getDuration() <= maxDurationMs)
+                        (newSongsFilter == null || !newSongsFilter.contains(song.getSpotifyId())))
                 .limit(songCount)
                 .collect(Collectors.toSet());
 
