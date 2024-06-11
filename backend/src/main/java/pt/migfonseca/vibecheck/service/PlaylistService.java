@@ -118,8 +118,8 @@ public class PlaylistService {
 
         // Combine all the songs into a single list
         List<Song> allFetchedSongs = new ArrayList<>();
+        Collections.shuffle(artistSongs);
         allFetchedSongs.addAll(artistSongs);
-        Collections.shuffle(allFetchedSongs);
         allFetchedSongs.addAll(featuringSongs);
         allFetchedSongs.addAll(genreSongs);
         allFetchedSongs.addAll(vibeSongs);
