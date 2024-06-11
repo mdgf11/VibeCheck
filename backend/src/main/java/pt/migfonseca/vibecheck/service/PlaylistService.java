@@ -47,283 +47,6 @@ public class PlaylistService {
     @Autowired
     private UserService userService;
 
-    private static final int MAX_SONGS_LIMIT = 100;
-
-    private List<Song> applyFilters(List<Song> songs, Set<Song> existingSongs, SettingsDTO settings, List<String> newSongsFilter) {
-        songs = songs.stream()
-                .filter(song -> !existingSongs.contains(song))
-                .collect(Collectors.toList());
-
-        // Apply new songs filter
-        if (newSongsFilter != null) {
-            songs = songs.stream()
-                    .filter(song -> !newSongsFilter.contains(song.getSpotifyId()))
-                    .collect(Collectors.toList());
-        }
-
-        // Apply settings filter
-        if (settings.getMaxDuration() != null) {
-            songs = songs.stream()
-                    .filter(song -> song.getDuration() <= settings.getMaxDuration() * 60 * 1000)
-                    .collect(Collectors.toList());
-        }
-
-        return songs;
-    }
-
-    private Set<Song> selectRandomAndPopularArtistSongs(Artist artist, Set<Song> existingSongs, int count, SettingsDTO settings, List<String> newSongsFilter) {
-        List<Song> allSongsList = songRepository.findAllByArtist(artist).stream()
-                .filter(song -> !existingSongs.contains(song) && (newSongsFilter == null || !newSongsFilter.contains(song.getSpotifyId())))
-                .limit(MAX_SONGS_LIMIT)
-                .collect(Collectors.toList());
-
-        if (settings.getMaxDuration() != null) {
-            allSongsList = allSongsList.stream()
-                    .filter(song -> song.getDuration() <= settings.getMaxDuration() * 60 * 1000)
-                    .collect(Collectors.toList());
-        }
-
-        Collections.shuffle(allSongsList);
-        allSongsList.sort(Comparator.comparingInt(Song::getPopularity).reversed());
-
-        return allSongsList.stream()
-                .limit(count)
-                .collect(Collectors.toCollection(HashSet::new));
-    }
-
-    private boolean canAddSongWithDuration(long currentDurationMs, Song song, SettingsDTO settings) {
-        long maxDurationMs = (settings.getMaxDuration() != null ? settings.getMaxDuration() : Integer.MAX_VALUE) * 60 * 1000;
-        return currentDurationMs + song.getDuration() <= maxDurationMs;
-    }
-
-    private Set<Song> getFeaturingArtistSongs(Artist artist, Set<Song> existingSongs, int minCount, int maxCount, SettingsDTO settings, List<String> newSongsFilter) {
-        Set<Artist> featuringArtists = songRepository.findAllByArtist(artist).stream()
-                .flatMap(song -> song.getArtists().stream())
-                .filter(featArtist -> !featArtist.equals(artist))
-                .collect(Collectors.toSet());
-
-        List<Song> featuringSongs = songRepository.findAll().stream()
-                .filter(song -> song.getArtists().stream().anyMatch(featuringArtists::contains))
-                .limit(MAX_SONGS_LIMIT)
-                .collect(Collectors.toList());
-
-        featuringSongs = applyFilters(featuringSongs, existingSongs, settings, newSongsFilter);
-        Collections.shuffle(featuringSongs);
-
-        Set<Song> resultSongs = new HashSet<>();
-        long currentDurationMs = existingSongs.stream().mapToLong(Song::getDuration).sum();
-
-        for (Song song : featuringSongs) {
-            if (canAddSongWithDuration(currentDurationMs, song, settings)) {
-                resultSongs.add(song);
-                currentDurationMs += song.getDuration();
-                if (resultSongs.size() >= maxCount) break;
-            }
-        }
-
-        while (resultSongs.size() < minCount && !featuringSongs.isEmpty()) {
-            Song song = featuringSongs.remove(0);
-            if (!resultSongs.contains(song) && canAddSongWithDuration(currentDurationMs, song, settings)) {
-                resultSongs.add(song);
-                currentDurationMs += song.getDuration();
-            }
-        }
-
-        return resultSongs;
-    }
-
-    private Set<Song> getTopGenreSongs(Artist artist, Set<Song> existingSongs, int minCount, int maxCount, SettingsDTO settings, List<String> newSongsFilter) {
-        Set<Genre> topGenres = artist.getGenreRatings().stream()
-                .sorted(Comparator.comparingDouble(GenreRating::getRating).reversed())
-                .map(GenreRating::getGenre)
-                .limit(3)
-                .collect(Collectors.toSet());
-
-        List<Song> genreSongs = songRepository.findAll().stream()
-                .filter(song -> song.getGenreRatings().stream().map(GenreRating::getGenre).anyMatch(topGenres::contains))
-                .limit(MAX_SONGS_LIMIT)
-                .collect(Collectors.toList());
-
-        genreSongs = applyFilters(genreSongs, existingSongs, settings, newSongsFilter);
-        Collections.shuffle(genreSongs);
-
-        Set<Song> resultSongs = new HashSet<>();
-        long currentDurationMs = existingSongs.stream().mapToLong(Song::getDuration).sum();
-
-        for (Song song : genreSongs) {
-            if (canAddSongWithDuration(currentDurationMs, song, settings)) {
-                resultSongs.add(song);
-                currentDurationMs += song.getDuration();
-                if (resultSongs.size() >= maxCount) break;
-            }
-        }
-
-        while (resultSongs.size() < minCount && !genreSongs.isEmpty()) {
-            Song song = genreSongs.remove(0);
-            if (!resultSongs.contains(song) && canAddSongWithDuration(currentDurationMs, song, settings)) {
-                resultSongs.add(song);
-                currentDurationMs += song.getDuration();
-            }
-        }
-
-        return resultSongs;
-    }
-
-    private Set<Song> getTopVibesSongs(Artist artist, Set<Song> existingSongs, int minCount, int maxCount, SettingsDTO settings, List<String> newSongsFilter) {
-        Set<Vibe> topVibes = artist.getVibeRatings().stream()
-                .sorted(Comparator.comparingDouble(VibeRating::getRating).reversed())
-                .map(VibeRating::getVibe)
-                .limit(3)
-                .collect(Collectors.toSet());
-
-        List<Song> vibeSongs = songRepository.findAll().stream()
-                .filter(song -> song.getVibeRatings().stream().map(VibeRating::getVibe).anyMatch(topVibes::contains))
-                .limit(MAX_SONGS_LIMIT)
-                .collect(Collectors.toList());
-
-        vibeSongs = applyFilters(vibeSongs, existingSongs, settings, newSongsFilter);
-        Collections.shuffle(vibeSongs);
-
-        Set<Song> resultSongs = new HashSet<>();
-        long currentDurationMs = existingSongs.stream().mapToLong(Song::getDuration).sum();
-
-        for (Song song : vibeSongs) {
-            if (canAddSongWithDuration(currentDurationMs, song, settings)) {
-                resultSongs.add(song);
-                currentDurationMs += song.getDuration();
-                if (resultSongs.size() >= maxCount) break;
-            }
-        }
-
-        while (resultSongs.size() < minCount && !vibeSongs.isEmpty()) {
-            Song song = vibeSongs.remove(0);
-            if (!resultSongs.contains(song) && canAddSongWithDuration(currentDurationMs, song, settings)) {
-                resultSongs.add(song);
-                currentDurationMs += song.getDuration();
-            }
-        }
-
-        return resultSongs;
-    }
-
-    private Set<Song> finishOffPlaylist(Artist artist, Set<Song> allSongs, int finalCount, SettingsDTO settings, List<String> newSongsFilter) {
-        int currentSize = allSongs.size();
-        int remainingCount = finalCount - currentSize;
-
-        if (remainingCount <= 0) {
-            return allSongs;
-        }
-
-        Set<Song> additionalSongs = new HashSet<>();
-
-        // Add minimum artist songs
-        additionalSongs.addAll(generateMinimumSongs(artist, allSongs, settings, "artist", newSongsFilter));
-        additionalSongs = ensureDurationWithinLimit(additionalSongs, allSongs, settings);
-
-        // Add minimum genre songs
-        if (additionalSongs.size() < remainingCount) {
-            additionalSongs.addAll(generateMinimumSongs(artist, allSongs, settings, "genre", newSongsFilter));
-            additionalSongs = ensureDurationWithinLimit(additionalSongs, allSongs, settings);
-        }
-
-        // Add minimum vibe songs
-        if (additionalSongs.size() < remainingCount) {
-            additionalSongs.addAll(generateMinimumSongs(artist, allSongs, settings, "vibe", newSongsFilter));
-            additionalSongs = ensureDurationWithinLimit(additionalSongs, allSongs, settings);
-        }
-
-        // Add remaining songs to fill the count, considering all types
-        if (additionalSongs.size() < remainingCount) {
-            additionalSongs.addAll(selectRandomAndPopularArtistSongs(artist, allSongs, remainingCount - additionalSongs.size(), settings, newSongsFilter));
-            additionalSongs = ensureDurationWithinLimit(additionalSongs, allSongs, settings);
-
-            if (additionalSongs.size() < remainingCount) {
-                additionalSongs.addAll(getTopGenreSongs(artist, allSongs, remainingCount - additionalSongs.size(), remainingCount - additionalSongs.size(), settings, newSongsFilter));
-                additionalSongs = ensureDurationWithinLimit(additionalSongs, allSongs, settings);
-            }
-
-            if (additionalSongs.size() < remainingCount) {
-                additionalSongs.addAll(getTopVibesSongs(artist, allSongs, remainingCount - additionalSongs.size(), remainingCount - additionalSongs.size(), settings, newSongsFilter));
-                additionalSongs = ensureDurationWithinLimit(additionalSongs, allSongs, settings);
-            }
-
-            if (additionalSongs.size() < remainingCount) {
-                additionalSongs.addAll(getFeaturingArtistSongs(artist, allSongs, remainingCount - additionalSongs.size(), remainingCount - additionalSongs.size(), settings, newSongsFilter));
-                additionalSongs = ensureDurationWithinLimit(additionalSongs, allSongs, settings);
-            }
-        }
-
-        allSongs.addAll(additionalSongs);
-        return allSongs;
-    }
-
-    private Set<Song> generateMinimumSongs(Artist artist, Set<Song> allSongs, SettingsDTO settings, String type, List<String> newSongsFilter) {
-        Set<Song> minimumSongs = new HashSet<>();
-
-        switch (type) {
-            case "artist":
-                int minSongsByArtist = settings.getMinSongsPerArtist() != null ? settings.getMinSongsPerArtist().getOrDefault(artist.getName(), 0) : 0;
-                int maxSongsByArtist = settings.getMaxSongsPerArtist() != null ? settings.getMaxSongsPerArtist().getOrDefault(artist.getName(), Integer.MAX_VALUE) : Integer.MAX_VALUE;
-
-                if (minSongsByArtist > maxSongsByArtist) {
-                    throw new IllegalArgumentException("Minimum songs by artist cannot be greater than the maximum.");
-                }
-
-                minimumSongs.addAll(selectRandomAndPopularArtistSongs(artist, allSongs, minSongsByArtist, settings, newSongsFilter));
-                break;
-
-            case "genre":
-                int minSongsPerGenre = settings.getMinSongsPerGenre() != null ? settings.getMinSongsPerGenre().values().stream().mapToInt(Integer::intValue).sum() : 0;
-                int maxSongsPerGenre = settings.getMaxSongsPerGenre() != null ? settings.getMaxSongsPerGenre().values().stream().mapToInt(Integer::intValue).sum() : Integer.MAX_VALUE;
-
-                if (minSongsPerGenre > maxSongsPerGenre) {
-                    throw new IllegalArgumentException("Minimum songs per genre cannot be greater than the maximum.");
-                }
-
-                minimumSongs.addAll(getTopGenreSongs(artist, allSongs, minSongsPerGenre, maxSongsPerGenre, settings, newSongsFilter));
-                break;
-
-            case "vibe":
-                int minSongsPerVibe = settings.getMinSongsPerVibe() != null ? settings.getMinSongsPerVibe().values().stream().mapToInt(Integer::intValue).sum() : 0;
-                int maxSongsPerVibe = settings.getMaxSongsPerVibe() != null ? settings.getMaxSongsPerVibe().values().stream().mapToInt(Integer::intValue).sum() : Integer.MAX_VALUE;
-
-                if (minSongsPerVibe > maxSongsPerVibe) {
-                    throw new IllegalArgumentException("Minimum songs per vibe cannot be greater than the maximum.");
-                }
-
-                minimumSongs.addAll(getTopVibesSongs(artist, allSongs, minSongsPerVibe, maxSongsPerVibe, settings, newSongsFilter));
-                break;
-        }
-
-        return minimumSongs;
-    }
-
-    private Set<Song> ensureDurationWithinLimit(Set<Song> additionalSongs, Set<Song> allSongs, SettingsDTO settings) {
-        List<Song> additionalSongsList = new ArrayList<>(additionalSongs);
-        Collections.shuffle(additionalSongsList);
-
-        long currentDurationMs = allSongs.stream().mapToLong(Song::getDuration).sum();
-        long maxDurationMs = (settings.getMaxDuration() != null ? (settings.getMaxDuration() + 5) * 60 * 1000 : Long.MAX_VALUE);
-
-        Set<Song> resultSongs = new HashSet<>();
-        for (Song song : additionalSongsList) {
-            if (currentDurationMs + song.getDuration() <= maxDurationMs) {
-                resultSongs.add(song);
-                currentDurationMs += song.getDuration();
-            } else {
-                // Try to add another song that fits within the remaining time
-                for (Song replacement : additionalSongsList) {
-                    if (!resultSongs.contains(replacement) && currentDurationMs + replacement.getDuration() <= maxDurationMs) {
-                        resultSongs.add(replacement);
-                        currentDurationMs += replacement.getDuration();
-                        break;
-                    }
-                }
-            }
-        }
-        return resultSongs;
-    }
-
     public PlaylistDTO getPlaylist(String query, String artistString, String type, SettingsDTO settings) throws IOException {
         Optional<Artist> artist = artistRepository.findByName(artistString);
         Set<Song> allSongs = new HashSet<>();
@@ -368,8 +91,10 @@ public class PlaylistService {
                 throw new IOException("Invalid type.");
         }
 
-        Playlist playlist = createPlaylist("Playlist for " + query, allSongs);
-        setRatings(playlist, allSongs);
+        List<Song> shuffledSongs = new ArrayList<>(allSongs);
+        Collections.shuffle(shuffledSongs);
+        Playlist playlist = createPlaylist("Playlist for " + query, new HashSet<>(shuffledSongs));
+        setRatings(playlist, new HashSet<>(shuffledSongs));
 
         return playlist.toDto();
     }
@@ -380,30 +105,77 @@ public class PlaylistService {
             throw new IOException("Artist not found.");
         }
 
-        int fraction = 4;
-        int songCount = settings.getNumSongs() != null ? settings.getNumSongs() * fraction : (settings.getMaxDuration() != null ? settings.getMaxDuration() * 4 * fraction : 0);
+        int songCount = settings.getNumSongs() != null ? settings.getNumSongs() : Integer.MAX_VALUE;
+        long maxDurationMs = settings.getMaxDuration() != null ? settings.getMaxDuration() * 60 * 1000 : Long.MAX_VALUE;
+
         Set<Song> allSongs = new HashSet<>();
 
-        // Select random and popular songs
-        Set<Song> selectedSongs = selectRandomAndPopularArtistSongs(queryArtist.orElseThrow(() -> new IOException("Artist not found.")), allSongs, songCount / (fraction * fraction), settings, newSongsFilter);
+        // Fetch all songs related to the artist in a single query
+        List<Song> artistSongs = songRepository.findAllByArtist(queryArtist.get());
+        List<Song> featuringSongs = songRepository.findAllByArtistsIn(queryArtist.get().getFeaturingArtists());
+        List<Song> genreSongs = songRepository.findAllByGenresIn(queryArtist.get().getTopGenres(3));
+        List<Song> vibeSongs = songRepository.findAllByVibesIn(queryArtist.get().getTopVibes(3));
+
+        // Combine all the songs into a single list
+        List<Song> allFetchedSongs = new ArrayList<>();
+        allFetchedSongs.addAll(artistSongs);
+        allFetchedSongs.addAll(featuringSongs);
+        allFetchedSongs.addAll(genreSongs);
+        allFetchedSongs.addAll(vibeSongs);
+
+        // Filter and select songs based on number of songs and maximum duration
+        final Set<Song> finalAllSongs = allSongs; // Make allSongs effectively final
+        Set<Song> selectedSongs = allFetchedSongs.stream()
+                .filter(song -> !finalAllSongs.contains(song) &&
+                        (newSongsFilter == null || !newSongsFilter.contains(song.getSpotifyId())) &&
+                        song.getDuration() <= maxDurationMs)
+                .limit(songCount)
+                .collect(Collectors.toSet());
+
         allSongs.addAll(selectedSongs);
 
-        // Add songs from featuring artists
-        Set<Song> featuringSongs = getFeaturingArtistSongs(queryArtist.orElseThrow(() -> new IOException("Artist not found.")), allSongs, songCount / (fraction * fraction), songCount, settings, newSongsFilter);
-        allSongs.addAll(featuringSongs);
-
-        // Add top genre songs
-        Set<Song> genreSongs = getTopGenreSongs(queryArtist.orElseThrow(() -> new IOException("Artist not found.")), allSongs, songCount / (fraction * fraction), songCount, settings, newSongsFilter);
-        allSongs.addAll(genreSongs);
-
-        // Add top vibe songs
-        Set<Song> vibeSongs = getTopVibesSongs(queryArtist.orElseThrow(() -> new IOException("Artist not found.")), allSongs, songCount / (fraction * fraction), songCount, settings, newSongsFilter);
-        allSongs.addAll(vibeSongs);
-
-        // Finish off the song count
-        allSongs = finishOffPlaylist(queryArtist.orElseThrow(() -> new IOException("Artist not found.")), allSongs, settings.getNumSongs() != null ? settings.getNumSongs() : settings.getMaxDuration() * 4, settings, newSongsFilter);
+        // Ensure the playlist meets the exact number of songs or the maximum duration
+        if (settings.getNumSongs() != null) {
+            allSongs = adjustSongCount(allSongs, settings.getNumSongs(), maxDurationMs);
+        } else {
+            allSongs = adjustDuration(allSongs, maxDurationMs);
+        }
 
         return allSongs;
+    }
+
+    private Set<Song> adjustSongCount(Set<Song> songs, int targetCount, long maxDurationMs) {
+        List<Song> songList = new ArrayList<>(songs);
+        Collections.shuffle(songList);
+
+        Set<Song> adjustedSongs = new HashSet<>();
+        long currentDurationMs = 0;
+
+        for (Song song : songList) {
+            if (adjustedSongs.size() < targetCount && currentDurationMs + song.getDuration() <= maxDurationMs) {
+                adjustedSongs.add(song);
+                currentDurationMs += song.getDuration();
+            }
+        }
+
+        return adjustedSongs;
+    }
+
+    private Set<Song> adjustDuration(Set<Song> songs, long maxDurationMs) {
+        List<Song> songList = new ArrayList<>(songs);
+        Collections.shuffle(songList);
+
+        Set<Song> adjustedSongs = new HashSet<>();
+        long currentDurationMs = 0;
+
+        for (Song song : songList) {
+            if (currentDurationMs + song.getDuration() <= maxDurationMs) {
+                adjustedSongs.add(song);
+                currentDurationMs += song.getDuration();
+            }
+        }
+
+        return adjustedSongs;
     }
 
     private boolean isUserLoggedIn() {

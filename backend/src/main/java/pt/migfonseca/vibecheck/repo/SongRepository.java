@@ -36,4 +36,13 @@ public interface SongRepository extends JpaRepository<Song, Long> {
 
     @Query("SELECT s FROM Song s JOIN s.genreRatings gr WHERE gr.genre = :genre")
     List<Song> findAllByGenre(@Param("genre") Genre genre);
+
+    @Query("SELECT s FROM Song s JOIN s.artists a WHERE a IN :artists")
+    List<Song> findAllByArtistsIn(@Param("artists") List<Artist> artists);
+
+    @Query("SELECT s FROM Song s JOIN s.genreRatings gr WHERE gr.genre IN :genres")
+    List<Song> findAllByGenresIn(@Param("genres") List<Genre> genres);
+
+    @Query("SELECT s FROM Song s JOIN s.vibeRatings vr WHERE vr.vibe IN :vibes")
+    List<Song> findAllByVibesIn(@Param("vibes") List<Vibe> vibes);
 }

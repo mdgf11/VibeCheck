@@ -1,5 +1,6 @@
 package pt.migfonseca.vibecheck.model;
 
+import java.util.Comparator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -77,6 +78,33 @@ public class Artist extends RaterEntity {
 
     public void addSong(Song song) {
         this.songs.add(song);
+    }
+
+    // Add this method to get the top genres based on ratings
+    public List<Genre> getTopGenres(int limit) {
+        return genreRatings.stream()
+                .sorted(Comparator.comparingDouble(GenreRating::getRating).reversed())
+                .map(GenreRating::getGenre)
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    // Add this method to get the top vibes based on ratings
+    public List<Vibe> getTopVibes(int limit) {
+        return vibeRatings.stream()
+                .sorted(Comparator.comparingDouble(VibeRating::getRating).reversed())
+                .map(VibeRating::getVibe)
+                .limit(limit)
+                .collect(Collectors.toList());
+    }
+
+    // Add this method to get the featuring artists
+    public List<Artist> getFeaturingArtists() {
+        return songs.stream()
+                .flatMap(song -> song.getArtists().stream())
+                .filter(featArtist -> !featArtist.equals(this))
+                .distinct()
+                .collect(Collectors.toList());
     }
 
     public void addFeature(Album album) {
