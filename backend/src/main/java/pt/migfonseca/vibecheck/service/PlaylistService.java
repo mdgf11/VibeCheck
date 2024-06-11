@@ -119,13 +119,13 @@ public class PlaylistService {
         // Combine all the songs into a single list
         List<Song> allFetchedSongs = new ArrayList<>();
         allFetchedSongs.addAll(artistSongs);
+        Collections.shuffle(allFetchedSongs);
         allFetchedSongs.addAll(featuringSongs);
         allFetchedSongs.addAll(genreSongs);
         allFetchedSongs.addAll(vibeSongs);
 
         // Filter and select songs based on number of songs and maximum duration
         final Set<Song> finalAllSongs = allSongs;
-        Collections.shuffle(allFetchedSongs);
 
         Set<Song> selectedSongs = allFetchedSongs.stream()
                 .filter(song -> !finalAllSongs.contains(song) &&
