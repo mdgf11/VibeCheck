@@ -9,9 +9,9 @@
             <button class="toggle-button" @click="toggleOption">{{ isNumSongs ? 'Nº Songs' : 'Duration (min)' }}</button>
             <div v-if="isNumSongs">
               <label>
-                <input type="number" v-model.number="numSongs" :disabled="!isNumSongs" min="0" max="60" class="number-input" />
+                <input type="number" v-model.number="numSongs" :disabled="!isNumSongs" min="0" max="100" class="number-input" />
               </label>
-              <input type="range" v-model.number="numSongs" :disabled="!isNumSongs" :min="0" :max="60" class="slider" />
+              <input type="range" v-model.number="numSongs" :disabled="!isNumSongs" :min="0" :max="100" class="slider" />
             </div>
             <div v-if="!isNumSongs">
               <label>
